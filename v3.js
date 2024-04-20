@@ -46,27 +46,30 @@ const mainLoop = async ()=>{
                 console.log('REDIFINE OFFSET BELOW');
             }
             //
-            let buy_balance = ACCOUNT.balances.find(obje => obje.asset == PAIRS[keyPair].symbol_buy).free;
-            let sell_balance = ACCOUNT.balances.find(obje => obje.asset == PAIRS[keyPair].symbol_sell).free;
+
             //
-            if(zone == 'ABOVE'){// generate orders
-                if (buy_balance > PAIRS[keyPair].min_buy){
-                    //create order with all your usdt to buy BTC or current key
-                    let qty = roundDown(buy_balance / PAIRS[keyPair].currentPrice.price, PAIRS[keyPair].decimals);
-                    let price =  roundDown(PAIRS[keyPair].currentPrice.price + PAIRS[keyPair].dollar_margin);
-                    let order = await placeOrder('BTCUSDT', 'BUY', 'LIMIT', {price: price, quantity: qty, timeInForce: 'GTC'});
-                    console.log('BUY ORDER...', order);
+            if(ACCOUNT?.balances){
+                let buy_balance = ACCOUNT?.balances.find(obje => obje.asset == PAIRS[keyPair].symbol_buy).free;
+                let sell_balance = ACCOUNT?.balances.find(obje => obje.asset == PAIRS[keyPair].symbol_sell).free;
+                if(zone == 'ABOVE'){// generate orders
+                    if (buy_balance > PAIRS[keyPair].min_buy){
+                        //create order with all your usdt to buy BTC or current key
+                        let qty = roundDown(buy_balance / PAIRS[keyPair].currentPrice.price, PAIRS[keyPair].decimals);
+                        let price =  roundDown(PAIRS[keyPair].currentPrice.price + PAIRS[keyPair].dollar_margin);
+                        let order = await placeOrder('BTCUSDT', 'BUY', 'LIMIT', {price: price, quantity: qty, timeInForce: 'GTC'});
+                        console.log('BUY ORDER...', order);
+                    }
+                } else if(zone == 'BELOW'){
+                    if (sell_balance > PAIRS[keyPair].min_sell){
+                        let qty = sell_balance;
+                        let price =  roundDown(PAIRS[keyPair].currentPrice.price - PAIRS[keyPair].dollar_margin, PAIRS[keyPair].decimals);
+                        let order = await placeOrder('BTCUSDT', 'SELL', 'LIMIT', {price: price, quantity: qty, timeInForce: 'GTC'});
+                        console.log('SELL ORDER...', order);
+                    }
                 }
-            } else if(zone == 'BELOW'){
-                if (sell_balance > PAIRS[keyPair].min_sell){
-                    let qty = sell_balance;
-                    let price =  roundDown(PAIRS[keyPair].currentPrice.price - PAIRS[keyPair].dollar_margin, PAIRS[keyPair].decimals);
-                    let order = await placeOrder('BTCUSDT', 'SELL', 'LIMIT', {price: price, quantity: qty, timeInForce: 'GTC'});
-                    console.log('SELL ORDER...', order);
-                }
+                console.log(keyPair, zone, slipage_ratio, PAIRS[keyPair].symbol_buy, buy_balance, PAIRS[keyPair].symbol_sell, sell_balance, PAIRS[keyPair].offset);
             }
             //
-            console.log(keyPair, zone, slipage_ratio, PAIRS[keyPair].symbol_buy, buy_balance, PAIRS[keyPair].symbol_sell, sell_balance, PAIRS[keyPair].offset);
             resolve();
         }));
     });
