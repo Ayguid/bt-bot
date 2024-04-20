@@ -34,7 +34,7 @@ const avgPrice = async (pair) => {
     });
 }
 const tickerPrice = async (pair) => {
-    return await client.tickerPrice('BTCUSDT').then(response => {
+    return await client.tickerPrice(pair).then(response => {
         if(DEBUG) client.logger.log(response.data);
         return response.data;
     })

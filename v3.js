@@ -23,7 +23,7 @@ const mainLoop = async ()=>{
     ACCOUNT = await fetchMyAccount();
     Object.keys(PAIRS).forEach((keyPair) => {
         promiseArray.push(new Promise(async (resolve, reject) => {
-            PAIRS[keyPair].currentPrice = await tickerPrice(PAIRS[keyPair]);
+            PAIRS[keyPair].currentPrice = await tickerPrice(keyPair);
             PAIRS[keyPair].avgPrice = await avgPrice(keyPair);
             PAIRS[keyPair].margin_percent = percent(PAIRS[keyPair].margin, PAIRS[keyPair].avgPrice.price);
             if(!PAIRS[keyPair].offset){
