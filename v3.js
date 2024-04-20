@@ -11,7 +11,7 @@ const { fetchMyAccount, avgPrice, tickerPrice, fetchMyOrders, fetchMyTrades, pla
 let ACCOUNT = {};
 let TRADES = {};
 let PAIRS = { // add pairs here,
-    BTCUSDT: { offset: 60000, margin: 1, symbol_sell: 'BTC', symbol_buy: 'USDT', min_buy: 50, min_sell: 0.01, decimals: 4, dollar_margin: 50}, 
+    BTCUSDT: { offset: false, margin: 1, symbol_sell: 'BTC', symbol_buy: 'USDT', min_buy: 50, min_sell: 0.01, decimals: 4, dollar_margin: 50}, 
     //ETHUSDT: {}
 };
 
@@ -27,6 +27,9 @@ const mainLoop = async ()=>{
             PAIRS[keyPair].currentPrice = await tickerPrice(PAIRS[keyPair]);
             PAIRS[keyPair].avgPrice = await avgPrice(keyPair);
             PAIRS[keyPair].margin_percent = percent(PAIRS[keyPair].margin, PAIRS[keyPair].avgPrice.price);
+            if(!PAIRS[keyPair].offset){
+                PAIRS[keyPair].offset = roundDown(PAIRS[keyPair].currentPrice.price - percent(PAIRS[keyPair].margin, PAIRS[keyPair].currentPrice.price),0);
+            }
             let slipage_ratio = PAIRS[keyPair].avgPrice.price / PAIRS[keyPair].offset;
             let zone = slipage_ratio < 1 ? 'BELOW' : 'ABOVE'; 
             //console.log(zone, 'SLIPAGE RATIO',slipage_ratio);
