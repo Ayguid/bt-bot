@@ -28,9 +28,9 @@ const mainLoop = async ()=>{
             PAIRS[keyPair].avgPrice = await avgPrice(keyPair);
             PAIRS[keyPair].margin_percent = percent(PAIRS[keyPair].margin, PAIRS[keyPair].avgPrice.price);
             if(!PAIRS[keyPair].offset){
-                PAIRS[keyPair].offset = roundDown(PAIRS[keyPair].currentPrice.price - percent(PAIRS[keyPair].margin, PAIRS[keyPair].currentPrice.price),0);
+                PAIRS[keyPair].offset = PAIRS[keyPair].currentPrice.price - percent(PAIRS[keyPair].margin, PAIRS[keyPair].currentPrice.price);
             }
-            let slipage_ratio = PAIRS[keyPair].avgPrice.price / PAIRS[keyPair].offset;
+            let slipage_ratio = roundDown(PAIRS[keyPair].currentPrice.price / PAIRS[keyPair].offset, 4);
             let zone = slipage_ratio < 1 ? 'BELOW' : 'ABOVE'; 
             //console.log(zone, 'SLIPAGE RATIO',slipage_ratio);
             PAIRS[keyPair].orders = await fetchMyOrders(keyPair);
@@ -40,10 +40,10 @@ const mainLoop = async ()=>{
             })[0] : false;
             //
             if (slipage_ratio > 1 +  (PAIRS[keyPair].margin/100)) {// redifine offset
-                PAIRS[keyPair].offset = roundDown(PAIRS[keyPair].currentPrice.price * (1 - ( PAIRS[keyPair].margin /100)), 0);
+                PAIRS[keyPair].offset = PAIRS[keyPair].currentPrice.price * (1 - ( PAIRS[keyPair].margin /100)), 0;
                 console.log('REDIFINE OFFSET ABOVE');
             }else if(slipage_ratio < 1 -  (PAIRS[keyPair].margin/100)){
-                PAIRS[keyPair].offset = roundDown(PAIRS[keyPair].currentPrice.price * (1 + ( PAIRS[keyPair].margin /100)), 0);
+                PAIRS[keyPair].offset = PAIRS[keyPair].currentPrice.price * (1 + ( PAIRS[keyPair].margin /100)), 0;
                 console.log('REDIFINE OFFSET BELOW');
             }
             let buy_balance = ACCOUNT.balances.find(obje => obje.asset == PAIRS[keyPair].symbol_buy).free;
