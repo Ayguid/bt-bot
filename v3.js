@@ -37,10 +37,10 @@ const mainLoop = async ()=>{
             })[0] : false;
             //
             if (slipage_ratio > 1 +  (PAIRS[keyPair].margin/100)) {// redifine offset
-                PAIRS[keyPair].offset = PAIRS[keyPair].currentPrice.price * (1 -( PAIRS[keyPair].margin /100))
+                PAIRS[keyPair].offset = roundDown(PAIRS[keyPair].currentPrice.price * (1 - ( PAIRS[keyPair].margin /100)), 0);
                 console.log('REDIFINE OFFSET ABOVE');
             }else if(slipage_ratio < 1 -  (PAIRS[keyPair].margin/100)){
-                PAIRS[keyPair].offset = PAIRS[keyPair].currentPrice.price * (1 + ( PAIRS[keyPair].margin /100))
+                PAIRS[keyPair].offset = roundDown(PAIRS[keyPair].currentPrice.price * (1 + ( PAIRS[keyPair].margin /100)), 0);
                 console.log('REDIFINE OFFSET BELOW');
             }
             let buy_balance = ACCOUNT.balances.find(obje => obje.asset == PAIRS[keyPair].symbol_buy).free;
