@@ -60,95 +60,54 @@ const mainLoop = async () => {
           PAIRS[keyPair].orders.length > 0
             ? PAIRS[keyPair].orders.sort((a, b) => {
                 return new Date(b.time) - new Date(a.time);
-              })[0]
-            : false;
-        //
-        let slipage_ratio = roundDown(
-          PAIRS[keyPair].currentPrice.price / PAIRS[keyPair].offset,
-          PAIRS[keyPair].decimals
-        );
-        let zone = slipage_ratio < 1 ? "BELOW" : "ABOVE";
-        //
-        if (slipage_ratio > 1 + PAIRS[keyPair].margin / 100) {
-          // redifine offset
-          (PAIRS[keyPair].offset =
-            PAIRS[keyPair].currentPrice.price *
-            (1 - PAIRS[keyPair].margin / 100)),
-            0;
-          console.log("REDIFINE OFFSET ABOVE");
-        } else if (slipage_ratio < 1 - PAIRS[keyPair].margin / 100) {
-          (PAIRS[keyPair].offset =
-            PAIRS[keyPair].currentPrice.price *
-            (1 + PAIRS[keyPair].margin / 100)),
-            0;
-          console.log("REDIFINE OFFSET BELOW");
-        }
-        //
-        let buy_balance = ACCOUNT.balances.find(
-          (obje) => obje.asset == PAIRS[keyPair].symbol_buy
-        ).free;
-        let sell_balance = ACCOUNT.balances.find(
-          (obje) => obje.asset == PAIRS[keyPair].symbol_sell
-        ).free;
-        //
-        if (zone == "ABOVE") {
-          // generate orders
-          if (buy_balance > PAIRS[keyPair].min_buy) {
-            //create order with all your usdt to buy BTC or current key
-            let qty = roundDown(
-              buy_balance / PAIRS[keyPair].currentPrice.price,
-              PAIRS[keyPair].decimals
-            );
-            let price = roundDown(
-              PAIRS[keyPair].currentPrice.price + PAIRS[keyPair].dollar_margin
-            );
-            let order = await placeOrder("BTCUSDT", "BUY", "LIMIT", {
-              price: price,
-              quantity: qty,
-              timeInForce: "GTC",
-            });
-            console.log("BUY ORDER...", order);
-          }
-        } else if (zone == "BELOW") {
-          if (sell_balance > PAIRS[keyPair].min_sell) {
-            let qty = sell_balance;
-            let price = roundDown(
-              PAIRS[keyPair].currentPrice.price - PAIRS[keyPair].dollar_margin,
-              PAIRS[keyPair].decimals
-            );
-            let order = await placeOrder("BTCUSDT", "SELL", "LIMIT", {
-              price: price,
-              quantity: qty,
-              timeInForce: "GTC",
-            });
-            console.log("SELL ORDER...", order);
-          }
-        }
-        //
-        console.log(
-          keyPair,
-          zone,
-          slipage_ratio,
-          PAIRS[keyPair].symbol_buy,
-          buy_balance,
-          PAIRS[keyPair].symbol_sell,
-          sell_balance,
-          PAIRS[keyPair].offset
-        );
-        resolve();
-      })
-    );
-  });
-  //still needs error handling for each request, reconnect, and time resync, due to servertime and local time offset
-  Promise.all(promiseArray)
-    .then(() => {
-      saveData(ACCOUNT, "account.json"); // only if x condition save data
-      saveData(PAIRS, "pairs.json"); // only if x condition save data
-      if (!EXIT_MAIN_LOOP) setTimeout(mainLoop, DELAY); //loops
-    })
-    .catch((error) => {
-      console.log(error);
-      //mainLoop;
+            })[0] : false;
+            //
+            let slipage_ratio = roundDown(PAIRS[keyPair].currentPrice.price / PAIRS[keyPair].offset, PAIRS[keyPair].decimals);
+            let zone = slipage_ratio < 1 ? 'BELOW' : 'ABOVE'; 
+            //
+            if (slipage_ratio > 1 +  (PAIRS[keyPair].margin/100)) {// redifine offset
+                PAIRS[keyPair].offset = PAIRS[keyPair].currentPrice.price * (1 - ( PAIRS[keyPair].margin /100)), 0;
+                console.log('REDIFINE OFFSET ABOVE');
+            }else if(slipage_ratio < 1 -  (PAIRS[keyPair].margin/100)){
+                PAIRS[keyPair].offset = PAIRS[keyPair].currentPrice.price * (1 + ( PAIRS[keyPair].margin /100)), 0;
+                console.log('REDIFINE OFFSET BELOW');
+            }
+            //
+
+            //
+            if(ACCOUNT?.balances){
+                let buy_balance = ACCOUNT?.balances.find(obje => obje.asset == PAIRS[keyPair].symbol_buy).free;
+                let sell_balance = ACCOUNT?.balances.find(obje => obje.asset == PAIRS[keyPair].symbol_sell).free;
+                if(zone == 'ABOVE'){// generate orders
+                    if (buy_balance > PAIRS[keyPair].min_buy){
+                        //create order with all your usdt to buy BTC or current key
+                        let qty = roundDown(buy_balance / PAIRS[keyPair].currentPrice.price, PAIRS[keyPair].decimals);
+                        let price =  roundDown(PAIRS[keyPair].currentPrice.price + PAIRS[keyPair].dollar_margin);
+                        let order = await placeOrder('BTCUSDT', 'BUY', 'LIMIT', {price: price, quantity: qty, timeInForce: 'GTC'});
+                        console.log('BUY ORDER...', order);
+                    }
+                } else if(zone == 'BELOW'){
+                    if (sell_balance > PAIRS[keyPair].min_sell){
+                        let qty = sell_balance;
+                        let price =  roundDown(PAIRS[keyPair].currentPrice.price - PAIRS[keyPair].dollar_margin, PAIRS[keyPair].decimals);
+                        let order = await placeOrder('BTCUSDT', 'SELL', 'LIMIT', {price: price, quantity: qty, timeInForce: 'GTC'});
+                        console.log('SELL ORDER...', order);
+                    }
+                }
+                console.log(keyPair, zone, slipage_ratio, PAIRS[keyPair].symbol_buy, buy_balance, PAIRS[keyPair].symbol_sell, sell_balance, PAIRS[keyPair].offset);
+            }
+            //
+            resolve();
+        }));
+    });
+    //still needs error handling for each request, reconnect, and time resync, due to servertime and local time offset
+    Promise.all(promiseArray).then(() => {
+        saveData(ACCOUNT, 'account.json'); // only if x condition save data
+        saveData(PAIRS, 'pairs.json'); // only if x condition save data
+        if(!EXIT_MAIN_LOOP) setTimeout(mainLoop, DELAY); //loops
+    }).catch(error => {
+        console.log(error); 
+        //mainLoop;
     });
   /*
     // let tt = await assetDetail('BTC'); doesnt work on testnet
