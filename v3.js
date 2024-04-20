@@ -11,7 +11,7 @@ const { fetchMyAccount, avgPrice, tickerPrice, fetchMyOrders, fetchMyTrades, pla
 let ACCOUNT = {};
 let TRADES = {};
 let PAIRS = { // add pairs here,
-    BTCUSDT: { offset: 63500, margin: 1, symbol_sell: 'BTC', symbol_buy: 'USDT', min_buy: 50, min_sell: 0.01, decimals: 4, dollar_margin: 50}, 
+    BTCUSDT: { offset: 60000, margin: 1, symbol_sell: 'BTC', symbol_buy: 'USDT', min_buy: 50, min_sell: 0.01, decimals: 4, dollar_margin: 50}, 
     //ETHUSDT: {}
 };
 

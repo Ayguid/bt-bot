@@ -18,7 +18,7 @@ const saveData = async (dataToSave, fileName) => {
         if (DEBUG) console.log('Folder exists for ' + INIT_DATE);
     }
     //check if file exists
-    const contents = JSON.stringify(dataToSave);
+    const contents = JSON.stringify(dataToSave,null, 4);
     
     return await fs.writeFile( dateDirectory +'/'+ fileName, contents, err => {
         if (err) {
