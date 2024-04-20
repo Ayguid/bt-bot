@@ -14,8 +14,7 @@ let PAIRS = { // add pairs here,
     BTCUSDT: { offset: 63500, margin: 1, symbol_sell: 'BTC', symbol_buy: 'USDT', min_buy: 50, min_sell: 0.01, decimals: 4, dollar_margin: 50}, 
     //ETHUSDT: {}
 };
-let counter = 0;
-let counter_limit = 5;
+
 let EXIT_MAIN_LOOP = false; // used for exit condition to stop mainLoop function
 
 
@@ -47,7 +46,7 @@ const mainLoop = async ()=>{
             let buy_balance = ACCOUNT.balances.find(obje => obje.asset == PAIRS[keyPair].symbol_buy).free;
             let sell_balance = ACCOUNT.balances.find(obje => obje.asset == PAIRS[keyPair].symbol_sell).free;
             
-            if(counter > counter_limit){
+            
                 if(zone == 'ABOVE'){// generate orders
                     if (buy_balance > PAIRS[keyPair].min_buy){
                         //create order with all your usdt to buy BTC or current key
@@ -65,7 +64,7 @@ const mainLoop = async ()=>{
                         console.log('SELL ORDER...', order);
                     }
                 }
-            }
+            
             console.log(keyPair, zone, slipage_ratio, PAIRS[keyPair].symbol_buy, buy_balance, PAIRS[keyPair].symbol_sell, sell_balance, PAIRS[keyPair].offset);
             //console.log(PAIRS[keyPair].currentPrice, 'OFFSET:', PAIRS[keyPair].offset);
             resolve();
@@ -84,7 +83,6 @@ const mainLoop = async ()=>{
     // let tt = await assetDetail('BTC'); doesnt work on testnet
     if(!EXIT_MAIN_LOOP) setTimeout(mainLoop, delay); //loops
     */
-   if(counter<counter_limit) counter++;
 };
 
 
