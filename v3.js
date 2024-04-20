@@ -7,6 +7,9 @@ const { saveData } = require('./scripts/fileManager.js');
 //BINANCE CONNECTOR
 const { fetchMyAccount, avgPrice, tickerPrice, fetchMyOrders, fetchMyTrades, placeOrder, getOrder, cancelOrder, assetDetail } = require('./scripts/binance-spot.js');
 
+// Table Printer
+const { Table  } = require('console-table-printer');
+//
 //GLOBAL VARS START
 //GLOBAL VARS START
 let ACCOUNT = {};
@@ -50,25 +53,45 @@ const mainLoop = async ()=>{
 
             //
             if(ACCOUNT?.balances){
-                let buy_balance = ACCOUNT?.balances.find(obje => obje.asset == PAIRS[keyPair].symbol_buy).free;
-                let sell_balance = ACCOUNT?.balances.find(obje => obje.asset == PAIRS[keyPair].symbol_sell).free;
+                let buy_balance_free = ACCOUNT?.balances.find(obje => obje.asset == PAIRS[keyPair].symbol_buy).free;
+                let sell_balance_free = ACCOUNT?.balances.find(obje => obje.asset == PAIRS[keyPair].symbol_sell).free;
+                let buy_balance_locked = ACCOUNT?.balances.find(obje => obje.asset == PAIRS[keyPair].symbol_buy).locked;
+                let sell_balance_locked = ACCOUNT?.balances.find(obje => obje.asset == PAIRS[keyPair].symbol_sell).locked;
                 if(zone == 'ABOVE'){// generate orders
-                    if (buy_balance > PAIRS[keyPair].min_buy){
+                    if (buy_balance_free > PAIRS[keyPair].min_buy){
                         //create order with all your usdt to buy BTC or current key
-                        let qty = roundDown(buy_balance / (PAIRS[keyPair].currentPrice.price + PAIRS[keyPair].dollar_margin), PAIRS[keyPair].decimals);
+                        let qty = roundDown(buy_balance_free / (PAIRS[keyPair].currentPrice.price + PAIRS[keyPair].dollar_margin), PAIRS[keyPair].decimals);
                         let price =  roundDown(PAIRS[keyPair].currentPrice.price + PAIRS[keyPair].dollar_margin);
                         let order = await placeOrder('BTCUSDT', 'BUY', 'LIMIT', {price: price, quantity: qty, timeInForce: 'GTC'});
                         console.log('BUY ORDER...', order);
                     }
                 } else if(zone == 'BELOW'){
-                    if (sell_balance > PAIRS[keyPair].min_sell){
-                        let qty = sell_balance;
+                    if (sell_balance_free > PAIRS[keyPair].min_sell){
+                        let qty = sell_balance_free;
                         let price =  roundDown(PAIRS[keyPair].currentPrice.price - PAIRS[keyPair].dollar_margin, PAIRS[keyPair].decimals);
                         let order = await placeOrder('BTCUSDT', 'SELL', 'LIMIT', {price: price, quantity: qty, timeInForce: 'GTC'});
                         console.log('SELL ORDER...', order);
                     }
                 }
-                console.log(keyPair, zone, slipage_ratio, PAIRS[keyPair].symbol_buy, buy_balance, PAIRS[keyPair].symbol_sell, sell_balance, PAIRS[keyPair].offset, PAIRS[keyPair].currentPrice.price);
+                console.log(keyPair, zone, 'RATIO:',slipage_ratio, 'OFFSET:',PAIRS[keyPair].offset);
+
+                //print able
+                const p = new Table({
+                    columns: [
+                      { name: 'symbol', alignment: 'left', color: 'blue' }, // with alignment and color
+                      { name: 'balance_free', title: 'Free Balance', alignment: 'right' },
+                      { name: 'balance_locked', title: 'Locked Balance' }, // with Title as separate Text
+                    ],
+                    rows: [
+                        { symbol: PAIRS[keyPair].symbol_buy, balance_free: buy_balance_free, balance_locked: buy_balance_locked},
+                        { symbol: PAIRS[keyPair].symbol_sell, balance_free: sell_balance_free, balance_locked: sell_balance_locked},
+                    ],
+                    colorMap: {
+                      custom_green: '\x1b[32m', // define customized color
+                    },
+                });
+                p.printTable();  
+                
             }
             //
             resolve();
