@@ -1,24 +1,13 @@
 //es6 syntax for modules, old require is used for compatbility with libs
 //import {checkAndCreateFolder} from './fileManager.js';
-require("dotenv").config(); // env config
+require('dotenv').config(); // env config
 //HELPERS
-const { percent, roundDown } = require("./helpers.js");
-const { saveData } = require("./fileManager.js");
+const {percent, roundDown} = require('./helpers.js');
+const {saveData} = require('./fileManager.js');
 //BINANCE CONNECTOR
-const {
-  fetchMyAccount,
-  avgPrice,
-  tickerPrice,
-  fetchMyOrders,
-  fetchMyTrades,
-  placeOrder,
-  getOrder,
-  cancelOrder,
-  assetDetail,
-} = require("./binance-spot.js");
+const { fetchMyAccount, avgPrice, tickerPrice, fetchMyOrders, fetchMyTrades, placeOrder, getOrder, cancelOrder, assetDetail} = require('./binance-spot.js');
 
 //GLOBAL VARS START
-// hola pat
 let ACCOUNT = {};
 let TRADES = {};
 let PAIRS = { // add pairs here,
@@ -27,6 +16,7 @@ let PAIRS = { // add pairs here,
 };
 
 let EXIT_MAIN_LOOP = false; // used for exit condition to stop mainLoop function
+
 
 const DELAY = 2000; //ms, dont go under 1500
 const mainLoop = async ()=>{
@@ -37,6 +27,9 @@ const mainLoop = async ()=>{
             PAIRS[keyPair].currentPrice = await tickerPrice(PAIRS[keyPair]);
             PAIRS[keyPair].avgPrice = await avgPrice(keyPair);
             PAIRS[keyPair].margin_percent = percent(PAIRS[keyPair].margin, PAIRS[keyPair].avgPrice.price);
+            if(!PAIRS[keyPair].offset){
+                PAIRS[keyPair].offset = roundDown(PAIRS[keyPair].currentPrice.price - percent(PAIRS[keyPair].margin, PAIRS[keyPair].currentPrice.price),0);
+            }
             let slipage_ratio = PAIRS[keyPair].avgPrice.price / PAIRS[keyPair].offset;
             let zone = slipage_ratio < 1 ? 'BELOW' : 'ABOVE'; 
             //console.log(zone, 'SLIPAGE RATIO',slipage_ratio);
@@ -89,13 +82,14 @@ const mainLoop = async ()=>{
         console.log(error); 
         //mainLoop;
     });
-  /*
+    /*
     // let tt = await assetDetail('BTC'); doesnt work on testnet
     if(!EXIT_MAIN_LOOP) setTimeout(mainLoop, delay); //loops
     */
 };
 
-console.log("Starting");
+
+console.log('Starting');
 mainLoop();
 
 //cancelOrder('BTCUSDT', 12213042);
