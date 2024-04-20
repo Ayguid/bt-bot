@@ -2,11 +2,12 @@
 //import {checkAndCreateFolder} from './fileManager.js';
 require('dotenv').config(); // env config
 //HELPERS
-const {percent, roundDown} = require('./helpers.js');
-const {saveData} = require('./fileManager.js');
+const { percent, roundDown } = require('./scripts/helpers.js');
+const { saveData } = require('./scripts/fileManager.js');
 //BINANCE CONNECTOR
-const { fetchMyAccount, avgPrice, tickerPrice, fetchMyOrders, fetchMyTrades, placeOrder, getOrder, cancelOrder, assetDetail} = require('./binance-spot.js');
+const { fetchMyAccount, avgPrice, tickerPrice, fetchMyOrders, fetchMyTrades, placeOrder, getOrder, cancelOrder, assetDetail } = require('./scripts/binance-spot.js');
 
+//GLOBAL VARS START
 //GLOBAL VARS START
 let ACCOUNT = {};
 let TRADES = {};
