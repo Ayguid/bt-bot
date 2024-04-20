@@ -14,7 +14,6 @@ let PAIRS = { // add pairs here,
     BTCUSDT: { offset: false, margin: 1, symbol_sell: 'BTC', symbol_buy: 'USDT', min_buy: 50, min_sell: 0.01, decimals: 4, dollar_margin: 50}, 
     //ETHUSDT: {}
 };
-
 let EXIT_MAIN_LOOP = false; // used for exit condition to stop mainLoop function
 
 
@@ -24,52 +23,50 @@ const mainLoop = async ()=>{
     ACCOUNT = await fetchMyAccount();
     Object.keys(PAIRS).forEach((keyPair) => {
         promiseArray.push(new Promise(async (resolve, reject) => {
-            PAIRS[keyPair].currentPrice = await tickerPrice(PAIRS[keyPair]);
+            PAIRS[keyPair].currentPrice = await tickerPrice(keyPair);
             PAIRS[keyPair].avgPrice = await avgPrice(keyPair);
             PAIRS[keyPair].margin_percent = percent(PAIRS[keyPair].margin, PAIRS[keyPair].avgPrice.price);
             if(!PAIRS[keyPair].offset){
-                PAIRS[keyPair].offset = roundDown(PAIRS[keyPair].currentPrice.price - percent(PAIRS[keyPair].margin, PAIRS[keyPair].currentPrice.price),0);
+                PAIRS[keyPair].offset = PAIRS[keyPair].currentPrice.price - percent(PAIRS[keyPair].margin, PAIRS[keyPair].currentPrice.price);
             }
-            let slipage_ratio = PAIRS[keyPair].avgPrice.price / PAIRS[keyPair].offset;
-            let zone = slipage_ratio < 1 ? 'BELOW' : 'ABOVE'; 
-            //console.log(zone, 'SLIPAGE RATIO',slipage_ratio);
             PAIRS[keyPair].orders = await fetchMyOrders(keyPair);
             //            
             PAIRS[keyPair].last_order = PAIRS[keyPair].orders.length > 0 ? PAIRS[keyPair].orders.sort((a,b)=>{ 
                 return new Date(b.time) - new Date(a.time);
             })[0] : false;
             //
+            let slipage_ratio = roundDown(PAIRS[keyPair].currentPrice.price / PAIRS[keyPair].offset, PAIRS[keyPair].decimals);
+            let zone = slipage_ratio < 1 ? 'BELOW' : 'ABOVE'; 
+            //
             if (slipage_ratio > 1 +  (PAIRS[keyPair].margin/100)) {// redifine offset
-                PAIRS[keyPair].offset = roundDown(PAIRS[keyPair].currentPrice.price * (1 - ( PAIRS[keyPair].margin /100)), 0);
+                PAIRS[keyPair].offset = PAIRS[keyPair].currentPrice.price * (1 - ( PAIRS[keyPair].margin /100)), 0;
                 console.log('REDIFINE OFFSET ABOVE');
             }else if(slipage_ratio < 1 -  (PAIRS[keyPair].margin/100)){
-                PAIRS[keyPair].offset = roundDown(PAIRS[keyPair].currentPrice.price * (1 + ( PAIRS[keyPair].margin /100)), 0);
+                PAIRS[keyPair].offset = PAIRS[keyPair].currentPrice.price * (1 + ( PAIRS[keyPair].margin /100)), 0;
                 console.log('REDIFINE OFFSET BELOW');
             }
+            //
             let buy_balance = ACCOUNT.balances.find(obje => obje.asset == PAIRS[keyPair].symbol_buy).free;
             let sell_balance = ACCOUNT.balances.find(obje => obje.asset == PAIRS[keyPair].symbol_sell).free;
-            
-            
-                if(zone == 'ABOVE'){// generate orders
-                    if (buy_balance > PAIRS[keyPair].min_buy){
-                        //create order with all your usdt to buy BTC or current key
-                        let qty = roundDown(buy_balance / PAIRS[keyPair].currentPrice.price, PAIRS[keyPair].decimals);
-                        let price =  roundDown(PAIRS[keyPair].currentPrice.price + PAIRS[keyPair].dollar_margin, 0);
-                        console.log(buy_balance,sell_balance, PAIRS[keyPair].currentPrice.price,qty);
-                        let order = await placeOrder('BTCUSDT', 'BUY', 'LIMIT', {price: price, quantity: qty, timeInForce: 'GTC'});
-                        console.log('BUY ORDER...', order);
-                    }
-                } else if(zone == 'BELOW'){
-                    if (sell_balance > PAIRS[keyPair].min_sell){
-                        let qty = sell_balance;
-                        let price =  roundDown(PAIRS[keyPair].currentPrice.price - PAIRS[keyPair].dollar_margin, PAIRS[keyPair].decimals);
-                        let order = await placeOrder('BTCUSDT', 'SELL', 'LIMIT', {price: price, quantity: qty, timeInForce: 'GTC'});
-                        console.log('SELL ORDER...', order);
-                    }
+            //
+            if(zone == 'ABOVE'){// generate orders
+                if (buy_balance > PAIRS[keyPair].min_buy){
+                    //create order with all your usdt to buy BTC or current key
+                    let qty = roundDown(buy_balance / PAIRS[keyPair].currentPrice.price, PAIRS[keyPair].decimals);
+                    let price =  roundDown(PAIRS[keyPair].currentPrice.price + PAIRS[keyPair].dollar_margin);
+                    let order = await placeOrder('BTCUSDT', 'BUY', 'LIMIT', {price: price, quantity: qty, timeInForce: 'GTC'});
+                    console.log('BUY ORDER...', order);
                 }
-            
+            } else if(zone == 'BELOW'){
+                if (sell_balance > PAIRS[keyPair].min_sell){
+                    let qty = sell_balance;
+                    let price =  roundDown(PAIRS[keyPair].currentPrice.price - PAIRS[keyPair].dollar_margin, PAIRS[keyPair].decimals);
+                    let order = await placeOrder('BTCUSDT', 'SELL', 'LIMIT', {price: price, quantity: qty, timeInForce: 'GTC'});
+                    console.log('SELL ORDER...', order);
+                }
+            }
+            //
             console.log(keyPair, zone, slipage_ratio, PAIRS[keyPair].symbol_buy, buy_balance, PAIRS[keyPair].symbol_sell, sell_balance, PAIRS[keyPair].offset);
-            //console.log(PAIRS[keyPair].currentPrice, 'OFFSET:', PAIRS[keyPair].offset);
             resolve();
         }));
     });
