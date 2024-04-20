@@ -2,16 +2,17 @@
 //import {checkAndCreateFolder} from './fileManager.js';
 require('dotenv').config(); // env config
 //HELPERS
-const {percent, roundDown} = require('./helpers.js');
-const {saveData} = require('./fileManager.js');
+const { percent, roundDown } = require('./scripts/helpers.js');
+const { saveData } = require('./scripts/fileManager.js');
 //BINANCE CONNECTOR
-const { fetchMyAccount, avgPrice, tickerPrice, fetchMyOrders, fetchMyTrades, placeOrder, getOrder, cancelOrder, assetDetail} = require('./binance-spot.js');
+const { fetchMyAccount, avgPrice, tickerPrice, fetchMyOrders, fetchMyTrades, placeOrder, getOrder, cancelOrder, assetDetail } = require('./scripts/binance-spot.js');
 
+//GLOBAL VARS START
 //GLOBAL VARS START
 let ACCOUNT = {};
 let TRADES = {};
 let PAIRS = { // add pairs here,
-    BTCUSDT: { offset: false, margin: 1, symbol_sell: 'BTC', symbol_buy: 'USDT', min_buy: 50, min_sell: 0.01, decimals: 4, dollar_margin: 50}, 
+    BTCUSDT: { offset: false, margin: 0.15, symbol_sell: 'BTC', symbol_buy: 'USDT', min_buy: 50, min_sell: 0.003, decimals: 4, dollar_margin: 100}, 
     //ETHUSDT: {}
 };
 let EXIT_MAIN_LOOP = false; // used for exit condition to stop mainLoop function
@@ -54,7 +55,7 @@ const mainLoop = async ()=>{
                 if(zone == 'ABOVE'){// generate orders
                     if (buy_balance > PAIRS[keyPair].min_buy){
                         //create order with all your usdt to buy BTC or current key
-                        let qty = roundDown(buy_balance / PAIRS[keyPair].currentPrice.price, PAIRS[keyPair].decimals);
+                        let qty = roundDown(buy_balance / (PAIRS[keyPair].currentPrice.price + PAIRS[keyPair].dollar_margin), PAIRS[keyPair].decimals);
                         let price =  roundDown(PAIRS[keyPair].currentPrice.price + PAIRS[keyPair].dollar_margin);
                         let order = await placeOrder('BTCUSDT', 'BUY', 'LIMIT', {price: price, quantity: qty, timeInForce: 'GTC'});
                         console.log('BUY ORDER...', order);
