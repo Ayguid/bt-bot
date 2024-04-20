@@ -21,45 +21,28 @@ const {
 // hola pat
 let ACCOUNT = {};
 let TRADES = {};
-let PAIRS = {
-  // add pairs here,
-  BTCUSDT: {
-    offset: 60000,
-    margin: 1,
-    symbol_sell: "BTC",
-    symbol_buy: "USDT",
-    min_buy: 50,
-    min_sell: 0.01,
-    decimals: 4,
-    dollar_margin: 50,
-  },
-  //ETHUSDT: {}
+let PAIRS = { // add pairs here,
+    BTCUSDT: { offset: false, margin: 1, symbol_sell: 'BTC', symbol_buy: 'USDT', min_buy: 50, min_sell: 0.01, decimals: 4, dollar_margin: 50}, 
+    //ETHUSDT: {}
 };
 
 let EXIT_MAIN_LOOP = false; // used for exit condition to stop mainLoop function
 
 const DELAY = 2000; //ms, dont go under 1500
-const mainLoop = async () => {
-  let promiseArray = []; // array of promises used to wait unti forLoop finishes reqs for each pair
-  ACCOUNT = await fetchMyAccount();
-  Object.keys(PAIRS).forEach((keyPair) => {
-    promiseArray.push(
-      new Promise(async (resolve, reject) => {
-        PAIRS[keyPair].currentPrice = await tickerPrice(PAIRS[keyPair]);
-        PAIRS[keyPair].avgPrice = await avgPrice(keyPair);
-        PAIRS[keyPair].margin_percent = percent(
-          PAIRS[keyPair].margin,
-          PAIRS[keyPair].avgPrice.price
-        );
-        let slipage_ratio =
-          PAIRS[keyPair].avgPrice.price / PAIRS[keyPair].offset;
-        let zone = slipage_ratio < 1 ? "BELOW" : "ABOVE";
-        //console.log(zone, 'SLIPAGE RATIO',slipage_ratio);
-        PAIRS[keyPair].orders = await fetchMyOrders(keyPair);
-        //
-        PAIRS[keyPair].last_order =
-          PAIRS[keyPair].orders.length > 0
-            ? PAIRS[keyPair].orders.sort((a, b) => {
+const mainLoop = async ()=>{
+    let promiseArray = []; // array of promises used to wait unti forLoop finishes reqs for each pair
+    ACCOUNT = await fetchMyAccount();
+    Object.keys(PAIRS).forEach((keyPair) => {
+        promiseArray.push(new Promise(async (resolve, reject) => {
+            PAIRS[keyPair].currentPrice = await tickerPrice(PAIRS[keyPair]);
+            PAIRS[keyPair].avgPrice = await avgPrice(keyPair);
+            PAIRS[keyPair].margin_percent = percent(PAIRS[keyPair].margin, PAIRS[keyPair].avgPrice.price);
+            let slipage_ratio = PAIRS[keyPair].avgPrice.price / PAIRS[keyPair].offset;
+            let zone = slipage_ratio < 1 ? 'BELOW' : 'ABOVE'; 
+            //console.log(zone, 'SLIPAGE RATIO',slipage_ratio);
+            PAIRS[keyPair].orders = await fetchMyOrders(keyPair);
+            //            
+            PAIRS[keyPair].last_order = PAIRS[keyPair].orders.length > 0 ? PAIRS[keyPair].orders.sort((a,b)=>{ 
                 return new Date(b.time) - new Date(a.time);
             })[0] : false;
             //
