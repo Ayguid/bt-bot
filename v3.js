@@ -67,7 +67,7 @@ const mainLoop = async ()=>{
                         console.log('SELL ORDER...', order);
                     }
                 }
-                console.log(keyPair, zone, slipage_ratio, PAIRS[keyPair].symbol_buy, buy_balance, PAIRS[keyPair].symbol_sell, sell_balance, PAIRS[keyPair].offset);
+                console.log(keyPair, zone, slipage_ratio, PAIRS[keyPair].symbol_buy, buy_balance, PAIRS[keyPair].symbol_sell, sell_balance, PAIRS[keyPair].offset, PAIRS[keyPair].currentPrice.price);
             }
             //
             resolve();
