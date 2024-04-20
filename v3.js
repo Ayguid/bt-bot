@@ -14,7 +14,6 @@ let PAIRS = { // add pairs here,
     BTCUSDT: { offset: false, margin: 1, symbol_sell: 'BTC', symbol_buy: 'USDT', min_buy: 50, min_sell: 0.01, decimals: 4, dollar_margin: 50}, 
     //ETHUSDT: {}
 };
-
 let EXIT_MAIN_LOOP = false; // used for exit condition to stop mainLoop function
 
 
@@ -55,7 +54,6 @@ const mainLoop = async ()=>{
                     //create order with all your usdt to buy BTC or current key
                     let qty = roundDown(buy_balance / PAIRS[keyPair].currentPrice.price, PAIRS[keyPair].decimals);
                     let price =  roundDown(PAIRS[keyPair].currentPrice.price + PAIRS[keyPair].dollar_margin);
-                    console.log(buy_balance,sell_balance, PAIRS[keyPair].currentPrice.price,qty);
                     let order = await placeOrder('BTCUSDT', 'BUY', 'LIMIT', {price: price, quantity: qty, timeInForce: 'GTC'});
                     console.log('BUY ORDER...', order);
                 }
