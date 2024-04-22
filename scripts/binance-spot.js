@@ -1,6 +1,7 @@
 //LIBS
 //const EventEmitter = require('node:events');
 //KEYS AND URL
+require('dotenv').config(); // env config
 const apiKey = process.env.BINANCE_API_KEY_TEST || '';
 const apiSecret = process.env.BINANCE_API_SECRET_TEST || '';
 const TEST_URL = 'https://testnet.binance.vision/';
