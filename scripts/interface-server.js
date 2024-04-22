@@ -1,7 +1,13 @@
 //server
-const express = require('express')
-const app = express()
-const port = 4000
+const express = require('express');
+const app = express();
+//
+const cors = require('cors'); 
+app.use(cors()); //allow cors for now
+
+const port = 5000;
+const ip = require('ip');
+const ipAddress = ip.address();
 //
 const fs = require('fs');
 
@@ -26,4 +32,5 @@ app.get('/pairs', (req, res) => {
 
 app.listen(port, () => {
     console.log(`Example app listening on port ${port}`)
+    console.log(`Network access via: ${ipAddress}:${port}!`);
 });
