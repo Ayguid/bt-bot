@@ -2,11 +2,10 @@
 //import {checkAndCreateFolder} from './fileManager.js';
 require('dotenv').config(); // env config
 //HELPERS
-const {percent} = require('./helpers.js');
-const {saveData} = require('./fileManager.js');
+const {percent} = require('./scripts/helpers.js');
+const {saveData} = require('./scripts/fileManager.js');
 //BINANCE CONNECTOR
-const { fetchMyAccount, avgPrice,  fetchMyOrders, fetchMyTrades, placeOrder, getOrder, cancelOrder} = require('./binance-spot.js');
-
+const { fetchMyAccount, avgPrice,  fetchMyOrders, fetchMyTrades, placeOrder, getOrder, cancelOrder} = require('./scripts/binance-spot.js');
 //GLOBAL VARS START
 let EXIT_MAIN_LOOP = false; // used for exit condition to stop mainLoop function
 //let TEST_REQ_QTY = 0; //counter used to exit after x times
@@ -15,8 +14,7 @@ let EXIT_MAIN_LOOP = false; // used for exit condition to stop mainLoop function
 let ACCOUNT = {};
 let TRADES = {};
 let ORDERS = { // add pairs here,
-    ADAUSDT: { tgtPcnt: 1.5, stpPcnt: 3.5}, 
-    //ETHUSDT: {}
+    ADAUSDC: { tgtPcnt: 1.5, stpPcnt: 2.5}, 
 };
 let LAST_ORDER = {};
 //GLOBAL VARS END
@@ -38,7 +36,7 @@ const mainLoop = async ()=> {
                 return new Date(b.time) - new Date(a.time);
             })[0] : false;
             //
-            if(LAST_ORDER){ 
+            if(LAST_ORDER){
                 //console.log(LAST_ORDER.symbol, LAST_ORDER.side, LAST_ORDER.status, LAST_ORDER.origQty, LAST_ORDER.price);
                 if(LAST_ORDER.status == 'NEW') {
                     //order is pending/new

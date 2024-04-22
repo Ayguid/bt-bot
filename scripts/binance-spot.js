@@ -1,5 +1,3 @@
-
-//saveData();
 //LIBS
 //const EventEmitter = require('node:events');
 //KEYS AND URL
