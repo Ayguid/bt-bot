@@ -2,7 +2,7 @@ const express = require('express');
 const app = express();
 const ip = require('ip');
 const ipAddress = ip.address();
-const port = 3000;
+const port = 5000;
 
 const { Bot } = require('./bot-engine.js');
 const { saveData } = require('./fileManager.js');
@@ -21,10 +21,17 @@ const io = require('socket.io')(server, {
 //
 io.on('connection', function(socket) {
     console.log('Client connected', socket.id)
+    socket.on('start bot', function() {
+        binanceBot.startBot();
+    });
+    socket.on('stop bot', function() {
+        binanceBot.stopBot();
+    });
 });
 
-//emitterCallback for bot updates
-const emitterCallback = async (msg) => {
+
+//botEmitterCB for bot updates
+const botEmitterCB = async (msg, data = false) => {
     //console.log(msg);
     let account  = binanceBot.account;
     let pairs = binanceBot.pairs;
@@ -33,6 +40,9 @@ const emitterCallback = async (msg) => {
     if(msg == 'waiting'){
         await io.emit('WAITING'); 
     }
+    if(msg == 'order placed'){
+        await io.emit('ORDER_PLACED', data); 
+    }
     await io.emit('ACCOUNT_MESSAGE', account);
     await io.emit('PAIRS_MESSAGE', pairs); 
     //binanceBot.stopBot();
@@ -40,8 +50,10 @@ const emitterCallback = async (msg) => {
 
 //start bot in server
 let ACCOUNT = {}; //empty for now, not necesary bot bot constructor ,, but,,,,
-let PAIRS = { // add pairs here,
-    BTCUSDT: { splitSymbol: 'BTC_USDT', tgtPcnt: 1, stpPcnt: 2.5, decimals: 4},
-};
-const binanceBot = new Bot(ACCOUNT, PAIRS, emitterCallback);
-binanceBot.startBotLoop(io.emit);
+let PAIRS = [// add pairs here,
+    { key: 'BTCUSDT', splitSymbol: 'BTC_USDT', tgtPcnt: 0.7, stpPcnt: 2.5, decimals: 4, defaultQty: 0.1},
+    //{ key: 'ADAUSDC', splitSymbol: 'ADA_USDC', tgtPcnt: 1, stpPcnt: 2.5, decimals: 4, defaultQty: 100}
+    { key: 'BNBUSDC', splitSymbol: 'BNB_USDC', tgtPcnt: 0.5, stpPcnt: 2.5, decimals: 4, defaultQty: 1}
+];
+const binanceBot = new Bot(ACCOUNT, PAIRS, botEmitterCB, 4000); //last parameter is delay, it has a defualt value of 1sec if no delay is passed
+binanceBot.startBot();
