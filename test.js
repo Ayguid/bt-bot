@@ -14,7 +14,12 @@ async function test(){
 
 //test()
 /*
-//placeOrder('ADAUSDT', 'BUY', 'LIMIT', {price: 0.5905, quantity: 100, timeInForce: 'GTC'});
+placeOrder('ADAUSDC', 'BUY', 'LIMIT', {price: 0.5193, quantity: 100, timeInForce: 'GTC'});
 //getOrder(keyPair, 10320852);
-//cancelOrder('ADAUSDT', 3111752);
+//placeOrder('BTCUSDT', 'BUY', 'LIMIT', {price: 66000, quantity: 0.1, timeInForce: 'GTC'});
+//cancelOrder('BTCUSDT', 4228567);
 */
+//placeOrder('BTCUSDT', 'BUY', 'LIMIT', {price: 66129, quantity: 0.1, timeInForce: 'GTC'});
+//cancelOrder('ETHUSDC', 1560200);
+
+placeOrder('BNBUSDC', 'BUY', 'LIMIT', {price: 600, quantity: 1, timeInForce: 'GTC'});
