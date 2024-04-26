@@ -1,0 +1,44 @@
+[
+    {
+        "key": "BTCUSDT",
+        "splitSymbol": "BTC_USDT",
+        "tgtPcnt": 0.5,
+        "stpPcnt": 2.5,
+        "decimals": 4,
+        "defaultQty": 0.1,
+        "currentPrice": {
+            "symbol": "BTCUSDT",
+            "price": 63000
+        },
+        "avgPrice": {
+            "mins": 5,
+            "price": 63000,
+            "closeTime": 1713830397164
+        },
+        "orders": [
+            {
+                "symbol": "BTCUSDT",
+                "orderId": 733928,
+                "orderListId": -1,
+                "clientOrderId": "GLL4broIsEdbCLMKEBuZ3q",
+                "price": 63360,
+                "origQty": 0.1,
+                "executedQty": 0.1,
+                "cummulativeQuoteQty": 0,
+                "status": "NEW",
+                "timeInForce": "GTC",
+                "type": "LIMIT",
+                "side": "SELL",
+                "stopPrice": 0,
+                "icebergQty": 0,
+                "time": "2024-04-25T02:50:35.578Z",
+                "updateTime": "2024-04-25T02:50:35.578Z",
+                "isWorking": true,
+                "workingTime": "2024-04-25T02:50:35.578Z",
+                "origQuoteOrderQty": 0,
+                "selfTradePreventionMode": "EXPIRE_MAKER"
+            }
+        ],
+        "margin_percent": null
+    }
+]

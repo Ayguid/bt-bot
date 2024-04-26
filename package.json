@@ -1,1 +1,15 @@
-{"dependencies":{"@binance/connector":"^3.2.0","console-table-printer":"^2.12.0","dotenv":"^16.4.5","node-binance-api":"^0.13.1"},"scripts":{"start":"node main"}}
+{
+    "dependencies": {
+        "@binance/connector": "^3.2.0",
+        "console-table-printer": "^2.12.0",
+        "cors": "^2.8.5",
+        "dotenv": "^16.4.5",
+        "express": "^4.19.2",
+        "ip": "^2.0.1",
+        "node-binance-api": "^0.13.1",
+        "socket.io": "^4.7.5"
+    },
+    "scripts": {
+        "start": "node ./scripts/server"
+    }
+}
