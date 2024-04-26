@@ -129,7 +129,7 @@ class Bot {
                         let percentage = percent(pair.tgtPcnt, Number(LAST_ORDER.price));
                         if (LAST_ORDER.side == 'BUY') {
                             type = 'SELL';
-                            price = (LAST_ORDER.price + pair.currentPrice.price)/2 + percentage//Number().toFixed(4); //promediar con avgPrice ? sino el valor siempre va a ser el mismo
+                            price = ((LAST_ORDER.price + pair.currentPrice.price)/2 > LAST_ORDER.price ? (LAST_ORDER.price + pair.currentPrice.price)/2 : (LAST_ORDER.price + pair.avgPrice.price)/2) + percentage//Number().toFixed(4); //promediar con avgPrice ? sino el valor siempre va a ser el mismo
                             //price = Number(pair.avgPrice.price) + percentage//Number().toFixed(4);
                         } else if (LAST_ORDER.side == 'SELL') {
                             type = 'BUY';
