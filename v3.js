@@ -15,7 +15,7 @@ const { Table  } = require('console-table-printer');
 let ACCOUNT = {};
 let TRADES = {};
 let PAIRS = { // add pairs here,
-    BTCUSDT: { offset: false, margin: 0.15, symbol_sell: 'BTC', symbol_buy: 'USDT', min_buy: 50, min_sell: 0.003, decimals: 4, dollar_margin: 100}, 
+    BTCUSDT: { offset: false, margin: 0.05, symbol_sell: 'BTC', symbol_buy: 'USDT', min_buy: 50, min_sell: 0.003, decimals: 4, dollar_margin: 1}, 
     //ETHUSDT: {}
 };
 let EXIT_MAIN_LOOP = false; // used for exit condition to stop mainLoop function
