@@ -21,7 +21,9 @@ const callbacks = {
 const websocketStreamClient = new WebsocketStream({ logger, callbacks, combinedStreams: true })
 websocketStreamClient.trade('btcusdt');
 // close websocket stream after 6 sec
-setTimeout(() => websocketStreamClient.disconnect(), 6000)
+setTimeout(() => {
+  websocketStreamClient.disconnect()
+}, 6000)
 
 
 

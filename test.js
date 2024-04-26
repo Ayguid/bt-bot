@@ -22,4 +22,4 @@ placeOrder('ADAUSDC', 'BUY', 'LIMIT', {price: 0.5193, quantity: 100, timeInForce
 //placeOrder('BTCUSDT', 'BUY', 'LIMIT', {price: 66129, quantity: 0.1, timeInForce: 'GTC'});
 //cancelOrder('ETHUSDC', 1560200);
 
-placeOrder('BNBUSDC', 'BUY', 'LIMIT', {price: 600, quantity: 1, timeInForce: 'GTC'});
+//placeOrder('BNBUSDC', 'BUY', 'LIMIT', {price: 600, quantity: 1, timeInForce: 'GTC'});

@@ -44,7 +44,7 @@ const tickerPrice = async (pair) => {
 }
 
 const fetchMyOrders = async (pair) => {
-    return await client.allOrders(pair).then(response => {
+    return await client.allOrders(pair, {limit: 30}).then(response => {
         if(DEBUG) client.logger.log(response.data);
         return response.data;
     }).catch(error => {
@@ -100,14 +100,6 @@ const cancelOrder = async (pair, id) => {
 }
 
 const cancelAndReplace = async (pair, side, type, params) => {
-    /* params
-    {
-        price: '10',
-        quantity: 1,
-        timeInForce: 'GTC',
-        cancelOrderId: 12
-    }
-    */
     return await client.cancelAndReplace(pair, side, type, 'STOP_ON_FAILURE', params).then(response =>{
         if(DEBUG) client.logger.log(response.data); 
         return response.data;
@@ -132,19 +124,6 @@ const assetDetail = async (pair) => {
     });
 }
 
-/*
-const cancelAndReplace = async (pair, id) => {
-    return await client.cancelAndReplace('BNBUSDT', 'BUY', 'LIMIT', 'STOP_ON_FAILURE', {
-        price: '10',
-        quantity: 1,
-        timeInForce: 'GTC',
-        cancelOrderId: 12
-      }).then(response => client.logger.log(response.data))
-    .catch(error => {
-        if(DEBUG) client.logger.error(error);
-        return error;
-    });
-}
-*/
+
 module.exports = { fetchMyAccount, avgPrice, tickerPrice,fetchMyOrders, fetchMyTrades, placeOrder, getOrder, cancelOrder, cancelAndReplace, assetDetail};
 
