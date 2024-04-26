@@ -15,7 +15,7 @@ const { Table  } = require('console-table-printer');
 let ACCOUNT = {};
 let TRADES = {};
 let PAIRS = { // add pairs here,
-    BTCUSDT: { offset: false, margin: 0.15, symbol_sell: 'BTC', symbol_buy: 'USDT', min_buy: 50, min_sell: 0.003, decimals: 4, dollar_margin: 100}, 
+    BTCUSDT: { offset: false, margin: 0.05, symbol_sell: 'BTC', symbol_buy: 'USDT', min_buy: 50, min_sell: 0.003, decimals: 4, dollar_margin: 1}, 
     //ETHUSDT: {}
 };
 let EXIT_MAIN_LOOP = false; // used for exit condition to stop mainLoop function
@@ -34,7 +34,7 @@ const mainLoop = async ()=>{
                 PAIRS[keyPair].offset = PAIRS[keyPair].currentPrice.price - percent(PAIRS[keyPair].margin, PAIRS[keyPair].currentPrice.price);
             }
             PAIRS[keyPair].orders = await fetchMyOrders(keyPair);
-            //            
+            //Search last order            
             PAIRS[keyPair].last_order = PAIRS[keyPair].orders.length > 0 ? PAIRS[keyPair].orders.sort((a,b)=>{ 
                 return new Date(b.time) - new Date(a.time);
             })[0] : false;
@@ -53,10 +53,12 @@ const mainLoop = async ()=>{
 
             //
             if(ACCOUNT?.balances){
-                let buy_balance_free = ACCOUNT?.balances.find(obje => obje.asset == PAIRS[keyPair].symbol_buy).free;
-                let sell_balance_free = ACCOUNT?.balances.find(obje => obje.asset == PAIRS[keyPair].symbol_sell).free;
-                let buy_balance_locked = ACCOUNT?.balances.find(obje => obje.asset == PAIRS[keyPair].symbol_buy).locked;
-                let sell_balance_locked = ACCOUNT?.balances.find(obje => obje.asset == PAIRS[keyPair].symbol_sell).locked;
+                let buy_balance = ACCOUNT?.balances.find(obje => obje.asset == PAIRS[keyPair].symbol_buy)
+                let sell_balance = ACCOUNT?.balances.find(obje => obje.asset == PAIRS[keyPair].symbol_sell)
+                let buy_balance_free = buy_balance.free;
+                let sell_balance_free = sell_balance.free;
+                let buy_balance_locked = buy_balance.locked;
+                let sell_balance_locked = sell_balance.locked;
                 if(zone == 'ABOVE'){// generate orders
                     if (buy_balance_free > PAIRS[keyPair].min_buy){
                         //create order with all your usdt to buy BTC or current key
@@ -73,22 +75,22 @@ const mainLoop = async ()=>{
                         console.log('SELL ORDER...', order);
                     }
                 }
-                console.log(keyPair, zone, 'RATIO:',slipage_ratio, 'OFFSET:',PAIRS[keyPair].offset);
+                console.log(keyPair, zone, 'RATIO:', slipage_ratio, 'OFFSET:', PAIRS[keyPair].offset);
 
                 //print able
                 const p = new Table({
                     columns: [
                       { name: 'symbol', alignment: 'left', color: 'blue' }, // with alignment and color
-                      { name: 'balance_free', title: 'Free Balance', alignment: 'right' },
-                      { name: 'balance_locked', title: 'Locked Balance' }, // with Title as separate Text
-                    ],
-                    rows: [
-                        { symbol: PAIRS[keyPair].symbol_buy, balance_free: buy_balance_free, balance_locked: buy_balance_locked},
-                        { symbol: PAIRS[keyPair].symbol_sell, balance_free: sell_balance_free, balance_locked: sell_balance_locked},
+                      { name: 'balance_free', title: 'Free Balance', alignment: 'right', color: 'custom_green' },
+                      { name: 'balance_locked', title: 'Locked Balance', color: 'red'}, // with Title as separate Text
                     ],
                     colorMap: {
                       custom_green: '\x1b[32m', // define customized color
                     },
+                    rows: [
+                        { symbol: PAIRS[keyPair].symbol_buy, balance_free: buy_balance_free, balance_locked: buy_balance_locked},
+                        { symbol: PAIRS[keyPair].symbol_sell, balance_free: sell_balance_free, balance_locked: sell_balance_locked},
+                    ],
                 });
                 p.printTable();  
                 
