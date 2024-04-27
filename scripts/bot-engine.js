@@ -21,9 +21,11 @@ class Bot {
             this.botLoop = this.botLoop.bind(this);
             this.exit_loop = true;
             this.debug = true;
+            this.new_order_counter = 0;
             this.partial_counter = 0;
             this.loss_up_counter = 0;
             this.loss_down_counter = 0;
+            this.new_order_counter_limit = 1; // delay for recancelling orders etc
             this.counter_limit = 250; // delay for recancelling orders etc
         }
     }
@@ -122,27 +124,33 @@ class Bot {
                     }
                     else if (LAST_ORDER.status == 'FILLED') {
                         //order was filled & create new order
-                        console.log('ORDER FILLED WAS ', LAST_ORDER.side);
-                        let type = '';
-                        let price = 0;
-                        let qty = pair.defaultQty; //pair.defaultQty || balance ,,,for the future
-                        let percentage = percent(pair.tgtPcnt, Number(LAST_ORDER.price));
-                        if (LAST_ORDER.side == 'BUY') {
-                            type = 'SELL';
-                            price = ((LAST_ORDER.price + pair.currentPrice.price)/2 > LAST_ORDER.price ? (LAST_ORDER.price + pair.currentPrice.price)/2 : (LAST_ORDER.price + pair.avgPrice.price)/2) + percentage//Number().toFixed(4); //promediar con avgPrice ? sino el valor siempre va a ser el mismo
-                            //price = Number(pair.avgPrice.price) + percentage//Number().toFixed(4);
-                        } else if (LAST_ORDER.side == 'SELL') {
-                            type = 'BUY';
-                            price = pair.avgPrice.price - percentage//Number().toFixed(4); 
-                            //price = Number(LAST_ORDER.price) - percentage//Number().toFixed(4);
+                        console.log('Waiting for new order ', this.new_order_counter);
+                        this.new_order_counter++
+                        if(this.new_order_counter >= this.new_order_counter_limit){
+                            console.log('ORDER FILLED WAS ', LAST_ORDER.side);
+                            this.new_order_counter = 0;
+                            let type = '';
+                            let price = 0;
+                            let qty = pair.defaultQty; //pair.defaultQty || balance ,,,for the future
+                            let percentage = percent(pair.tgtPcnt, Number(LAST_ORDER.price));
+                            if (LAST_ORDER.side == 'BUY') {
+                                type = 'SELL';
+                                price = (LAST_ORDER.price + pair.currentPrice.price)/2 + percentage//Number().toFixed(4); //promediar con avgPrice ? sino el valor siempre va a ser el mismo
+                                //price = Number(pair.avgPrice.price) + percentage//Number().toFixed(4);
+                            } else if (LAST_ORDER.side == 'SELL') {
+                                type = 'BUY';
+                                price = pair.avgPrice.price - percentage//Number().toFixed(4); 
+                                //price = Number(LAST_ORDER.price) - percentage//Number().toFixed(4);
+                            }
+                            console.log(price)
+                            console.log('PLACING ORDER ', type);
+                            LAST_ORDER = await placeOrder(pair.key, type, 'LIMIT', {
+                                price: Number(price).toFixed(1),
+                                quantity: qty,
+                                timeInForce: 'GTC'
+                            });
+                            this.emitterCallback('order placed', LAST_ORDER);
                         }
-                        console.log('PLACING ORDER ', type);
-                        LAST_ORDER = await placeOrder(pair.key, type, 'LIMIT', {
-                            price: price.toFixed(1),
-                            quantity: qty,
-                            timeInForce: 'GTC'
-                        });
-                        this.emitterCallback('order placed', LAST_ORDER);
                     }
                 }
                 else {//Only for first start,

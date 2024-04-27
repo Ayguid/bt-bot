@@ -2,7 +2,7 @@ const express = require('express');
 const app = express();
 const ip = require('ip');
 const ipAddress = ip.address();
-const port = 7000;
+const port = 5000;
 
 const { Bot } = require('./bot-engine.js');
 const { saveData } = require('./fileManager.js');
