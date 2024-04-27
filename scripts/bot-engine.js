@@ -25,8 +25,8 @@ class Bot {
             this.partial_counter = 0;
             this.loss_up_counter = 0;
             this.loss_down_counter = 0;
-            this.new_order_counter_limit = 1; // delay for recancelling orders etc
-            this.counter_limit = 250; // delay for recancelling orders etc
+            this.new_order_counter_limit = 10; // delay for recancelling orders etc
+            this.counter_limit = 50; // delay for recancelling orders etc
         }
     }
     startBot() {
@@ -104,6 +104,9 @@ class Bot {
                                 this.emitterCallback('order placed', LAST_ORDER);
                             }
                             this.loss_up_counter++;
+                        }else{
+                            this.loss_up_counter = 0;
+                            this.loss_down_counter = 0;
                         } 
                     }
                     else if (LAST_ORDER.status == 'PARTIALLY_FILLED') {
