@@ -21,12 +21,12 @@
         {
             "asset": "BTC",
             "free": "0.9000",
-            "locked": "0.1000"
+            "locked": "0.0000"
         },
         {
             "asset": "USDT",
-            "free": "10337.5415",
-            "locked": "-283.7452"
+            "free": "15742.3529",
+            "locked": "629.9541"
         }
     ],
     "permissions": [

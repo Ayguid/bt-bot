@@ -35,6 +35,7 @@ const fileSaver = async () => {
     });
 }
 
+let price_index = 0;
 const fetchMyAccount = async () => {
     await fileLoader();
 
@@ -42,18 +43,24 @@ const fetchMyAccount = async () => {
         //
         MOCK_PAIRS.map(pair => {
             //
-            const randomPrice = [
-                pair.currentPrice.price + percent(1.1, pair.currentPrice.price),
-                pair.currentPrice.price + percent(0.5, pair.currentPrice.price),
-                pair.currentPrice.price + percent(0.7, pair.currentPrice.price),
-                pair.currentPrice.price - percent(1.1, pair.currentPrice.price),
-                pair.currentPrice.price - percent(0.5, pair.currentPrice.price),
-                pair.currentPrice.price - percent(0.7, pair.currentPrice.price)
+            const prices = [
+                10000, 10000, 10000, 10000, 10000, 10000, 10000, 10000,
+                10100, 10100, 10100, 10100, 10100, 10100, 10100, 10100,
+                10200, 10200, 10200, 10200, 10200, 10200, 10200, 10200,
+                10300, 10300, 10300, 10300, 10300, 10300, 10300, 10300,
+                10100, 10100, 10100, 10100, 10100, 10100, 10100, 10100,
+                9900, 9900, 9900, 9900, 9900, 9900, 9900, 9900,
+                9500, 9500, 9500, 9500, 9500, 9500, 9500, 9500,
+                10000, 10000, 10000, 10000, 10000, 10000, 10000, 10000,
+                10100, 10100, 10100, 10100, 10100, 10100, 10100, 10100,
+                10200, 10200, 10200, 10200, 10200, 10200, 10200, 10200
             ];
             //const pairPrice = Number(pair.currentPrice.price);
-            const pairPrice = randomPrice[Math.floor(Math.random()*randomPrice.length)]; //random picker
+            const pairPrice = prices[price_index]; //random picker
             pair.currentPrice.price = pairPrice;
             pair.avgPrice.price = pairPrice;
+            price_index++;
+            if(price_index >= prices.length) price_index = 0;
             //
             let newOrders = pair.orders.filter(order => order.status == 'NEW'); // partially filled?
             newOrders.forEach(order => {
