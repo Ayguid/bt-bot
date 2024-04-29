@@ -5,7 +5,7 @@ require('dotenv').config(); // env config
 const { percent, roundDown } = require('./helpers.js');
 const { saveData } = require('./fileManager.js');
 //BINANCE CONNECTOR
-const { fetchMyAccount, avgPrice, tickerPrice, fetchMyOrders, fetchMyTrades, placeOrder, getOrder, cancelOrder, assetDetail } = require('./binance-spot.js');
+const { fetchMyAccount, avgPrice, tickerPrice, fetchMyOrders, fetchMyTrades, placeOrder, getOrder, cancelOrder, assetDetail } = require('../scripts/binance-spot.js');
 
 // Table Printer
 const { Table  } = require('console-table-printer');

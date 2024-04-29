@@ -6,7 +6,7 @@ In its logic it has a sell mentality, to be countinued,,,
 //helpers
 const { fetchMyAccount, avgPrice, tickerPrice, fetchMyOrders, fetchMyTrades, placeOrder, getOrder, cancelAndReplace, cancelOrder } = require('./binance-spot.js');
 //const { fetchMyAccount, avgPrice, tickerPrice, fetchMyOrders, placeOrder, cancelAndReplace } = require('./binance-mock.js');
-const { percent } = require('./helpers.js');
+const { percent } = require('../utils//helpers.js');
 //GLOBAL VARS END
 
 class Bot {
@@ -22,10 +22,10 @@ class Bot {
             this.exit_loop = true;
             this.debug = true;
             this.new_order_counter = 0;
-            this.new_order_counter_limit = 10; // delay for recancelling orders etc
+            this.new_order_counter_limit = 2; // delay for recancelling orders etc
             this.loss_up_counter = 0;
             this.loss_down_counter = 0;
-            this.loss_up_down_limit = 10;  // delay for recancelling orders etc
+            this.loss_up_down_limit = 2;  // delay for recancelling orders etc
             this.partial_counter = 0;
             this.partial_counter_limit = 50; // delay for recancelling orders etc
         }
@@ -57,7 +57,7 @@ class Bot {
                 console.log('\x1b[33m%s\x1b[0m', pair.key);
                 //Search last order
                 let LAST_ORDER = pair.orders.length > 0 ? pair.orders.sort((a, b) => {
-                    return new Date(b.time) - new Date(a.time);
+                    return new Date(b.updateTime) - new Date(a.updateTime);
                 })[0] : false;
                 // redundant condition (LAST_ORDER && pair.orders.length > 0)
                 if (LAST_ORDER && pair.orders.length > 0) { // redundant but it helps :(. Sort sometimes delays and returns undefined. Maybe return a promise from sort function/last order?
@@ -92,8 +92,14 @@ class Bot {
                                 //return; //stop bot
                                 const rePrice = (pair.avgPrice.price + percent(pair.tgtPcnt, pair.avgPrice.price)).toFixed(1);// last change was + percent instead of - %, next try selling to avg or current price
                                 //console.log(rePrice);
-                                LAST_ORDER = await cancelAndReplace(pair.key, 'SELL', 'LIMIT', {price: rePrice, quantity: LAST_ORDER.origQty, timeInForce: 'GTC', cancelOrderId: LAST_ORDER.orderId});
-                                this.emitterCallback('order placed', LAST_ORDER);
+                                //LAST_ORDER = await cancelAndReplace(pair.key, 'SELL', 'LIMIT', {price: rePrice, quantity: LAST_ORDER.origQty, timeInForce: 'GTC', cancelOrderId: LAST_ORDER.orderId});
+                                await cancelOrder(pair.key, LAST_ORDER.orderId);  
+                                const newOrder = await placeOrder(pair.key, 'SELL', 'LIMIT', {
+                                    price: Number(rePrice).toFixed(1),
+                                    quantity: LAST_ORDER.origQty,
+                                    timeInForce: 'GTC'
+                                }); 
+                                this.emitterCallback('order placed', newOrder);
                             }
                             this.loss_down_counter++
                         } 
@@ -105,8 +111,15 @@ class Bot {
                                 this.loss_up_counter = 0;
                                 const rePrice = (pair.currentPrice.price - percent(pair.tgtPcnt, pair.currentPrice.price)).toFixed(1);
                                 //console.log(rePrice)
-                                LAST_ORDER = await cancelAndReplace(pair.key, 'BUY', 'LIMIT', {price: rePrice, quantity: LAST_ORDER.origQty, timeInForce: 'GTC', cancelOrderId: LAST_ORDER.orderId});
-                                this.emitterCallback('order placed', LAST_ORDER);
+                                //LAST_ORDER = await cancelAndReplace(pair.key, 'BUY', 'LIMIT', {price: rePrice, quantity: LAST_ORDER.origQty, timeInForce: 'GTC', cancelOrderId: LAST_ORDER.orderId});
+                                
+                                await cancelOrder(pair.key, LAST_ORDER.orderId);  
+                                const newOrder = await placeOrder(pair.key, 'BUY', 'LIMIT', {
+                                    price: Number(rePrice).toFixed(1),
+                                    quantity: LAST_ORDER.origQty,
+                                    timeInForce: 'GTC'
+                                });  
+                                this.emitterCallback('order placed', newOrder);
                             }
                             this.loss_up_counter++;
                         }else{

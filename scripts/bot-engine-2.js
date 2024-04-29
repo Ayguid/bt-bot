@@ -3,11 +3,11 @@ This bot tries to short a certain tokean against a stablecoin
 In its logic it has a sell mentality, to be countinued,,,
 */
 //helpers
-const { StochasticRSI, MACD } = require('technicalindicators'); //https://github.com/anandanand84/technicalindicators?tab=readme-ov-file#readme
 const clc = require("cli-color"); //https://github.com/medikoo/cli-color
 const { fetchMyAccount, avgPrice, tickerPrice, fetchMyOrders, fetchMyTrades, placeOrder, getOrder, cancelAndReplace, cancelOrder, klines } = require('./binance-spot-2.js');
 //const { fetchMyAccount, avgPrice, tickerPrice, fetchMyOrders, placeOrder, cancelAndReplace } = require('./binance-mock.js');
-const { minusPercent, plusPercent, timePassed } = require('./helpers.js');
+const { minusPercent, plusPercent, timePassed, calculateProfit } = require('../utils/helpers.js');
+const { getIndicators } = require('../utils/indicators.js');
 //GLOBAL VARS END
 
 const rderror = clc.red.bold;
@@ -16,17 +16,17 @@ const notice = clc.blue.underline;//console.log(clc.red.bgWhite.underline("Under
 const grnotice = clc.green;
 
 class Bot {
-    constructor(account, pairs, emitterCallback, delay = false) {
-        if (!account || !pairs || !emitterCallback) {
+    constructor(pairs, emitterCallback, delay = false) {
+        if (!pairs || !emitterCallback) {
             throw "Bot constructor missing arguments";
         } else {
             this.bot_runs = 0;
-            this.account = account;
+            this.account = {};
             this.pairs = pairs;
             this.delay = delay || 2000;
             this.emitterCallback = emitterCallback;
-            this.botLoop = this.botLoop.bind(this);
-            this.exit_loop = true; //inits in false
+            this.exit_loop = true; //inits in true! bot hasnt started yet
+            //this.botLoop = this.botLoop.bind(this);
         }
     }
     startBot() {
@@ -51,10 +51,6 @@ class Bot {
         console.log(`ExQty ${verb}:`, order.executedQty);
         console.log(`Status:`, order.status);
     }
-    calculateProfit = (currentPrice, orderPrice) => {
-        let profit = ((currentPrice/orderPrice) - 1) * 100;
-        return profit;
-    }
     //
     async handleCanceledOrder(){
         console.log(notice('------ Doing something according to canceled order'));
@@ -63,7 +59,7 @@ class Bot {
         console.log(notice('------ According to new/pending order'));
         this.printOrderStatus(order);
         //
-        const profit = this.calculateProfit(pair.currentPrice.price, order.price);
+        const profit = calculateProfit(pair.currentPrice.price, order.price);
         console.log('Profit would be:', profit);
         //
         const upTrigger = plusPercent(pair.hghPcnt, order.price);
@@ -89,9 +85,9 @@ class Bot {
             console.log('SELLING/LOW');
             rePrice = plusPercent(pair.tgtPcnt/2, pair.avgPrice.price).toFixed(pair.stableDecimals);
         } 
-        if(loss_contition_up || loss_contition_down){
-            order = await cancelAndReplace(pair.key, order.side, 'LIMIT', {price: rePrice, quantity: order.origQty, timeInForce: 'GTC', cancelOrderId: order.orderId});
-            await this.emitterCallback('order placed', order); 
+        if(loss_contition_up || loss_contition_down){// only execute if x condition
+            const newOrder = await cancelAndReplace(pair.key, order.side, 'LIMIT', {price: rePrice, quantity: order.origQty, timeInForce: 'GTC', cancelOrderId: order.orderId});
+            await this.emitterCallback('order placed', newOrder); 
         }
     }
     async handleFilledOrder(order, pair){
@@ -102,21 +98,21 @@ class Bot {
         let qty = pair.defaultQty;
         let price = (()=>{
             if(newSide == 'SELL') return plusPercent(pair.tgtPcnt, order.price); // sell price
-            return minusPercent(pair.tgtPcnt/2, pair.avgPrice.price); //buy price
+            return minusPercent(pair.tgtPcnt * 0.25, pair.avgPrice.price); //buy price % is 1/4 of tgt percent
         })();
         //
         const isBuyContition = pair.indicators.CURRENT_STOCH_RSI.k < pair.stochBuyLimit && pair.indicators.CURRENT_MACD.signal < pair.macdBuyLimit
         //
         if(newSide == 'SELL' || (newSide == 'BUY' && isBuyContition)){
             console.log(grnotice('PLACING ORDER:', newSide, price));
-            order = await placeOrder(pair.key, newSide, 'LIMIT', {
+            const newOrder = await placeOrder(pair.key, newSide, 'LIMIT', {
                 price: Number(price).toFixed(pair.stableDecimals),
                 quantity: qty,
                 timeInForce: 'GTC'
             });
-            this.emitterCallback('order placed', order);
+            this.emitterCallback('order placed', newOrder);
         }else{
-            console.log(notice('Indicators not ok, waiting to buy..'), isBuyContition); 
+            console.log(notice('Indicators not ok, waiting to buy..')); 
         }
         //
     }
@@ -131,37 +127,11 @@ class Bot {
                 if(order.side == 'SELL') return pair.currentPrice.price;// sell price
                 return minusPercent(pair.tgtPcnt, pair.currentPrice.price).toFixed(pair.stableDecimals);//buy price
             })();
-            order = await cancelAndReplace(pair.key, order.side == 'SELL' ? 'SELL':'BUY', 'LIMIT', {price: rePrice, quantity: (order.origQty-order.executedQty).toFixed(pair.tokenDecimals), timeInForce: 'GTC', cancelOrderId: order.orderId});
-            this.emitterCallback('order placed', order);
+            const newOrder = await cancelAndReplace(pair.key, order.side == 'SELL' ? 'SELL':'BUY', 'LIMIT', {price: rePrice, quantity: (order.origQty-order.executedQty).toFixed(pair.tokenDecimals), timeInForce: 'GTC', cancelOrderId: order.orderId});
+            this.emitterCallback('order placed', newOrder);
         }else {
             console.log('Waiting for', waited_time, pair.partialWait)
         }
-    }
-    async getIndicators(candleArray) {
-        const filterCandlesClosing = candleArray.map( candle => Number(candle[4]) ); //4 is the index for closing price
-        //StochasticRSI
-        const stoch_rsi = StochasticRSI.calculate({
-            values: filterCandlesClosing,
-            rsiPeriod: 14,
-            stochasticPeriod: 14,
-            kPeriod: 3,
-            dPeriod: 3,
-        });
-        const CURRENT_STOCH_RSI = stoch_rsi[stoch_rsi.length -1];
-        //MACD
-        const macd = MACD.calculate({
-            values: filterCandlesClosing,
-            fastPeriod: 5,
-            slowPeriod: 8,
-            signalPeriod: 3 ,
-            SimpleMAOscillator: false,
-            SimpleMASignal: false
-        });
-        const CURRENT_MACD = macd[macd.length -1];
-        return {
-            CURRENT_STOCH_RSI,
-            CURRENT_MACD
-        };
     }
     //
     async botLoop() {
@@ -181,10 +151,10 @@ class Bot {
                     pair.avgPrice = await avgPrice(pair.key);
                     pair.orders = await fetchMyOrders(pair.key);
                     const candles = await klines(pair.key, '2h');
-                    pair.indicators = await this.getIndicators(candles);
+                    pair.indicators = await getIndicators(candles);
                     //Print prices & indicators
                     console.log(pair.key, 'C:', grnotice(pair.currentPrice.price), 'A:', grnotice(pair.avgPrice.price));
-                    console.log('STOCH RSI', pair.indicators.CURRENT_STOCH_RSI, 'MACD:', pair.indicators.CURRENT_MACD);
+                    console.log('STOCH RSI', pair.indicators.CURRENT_STOCH_RSI, 'MACD:', pair.indicators.CURRENT_MACD, 'ADX:', pair.indicators.CURRENT_ADX);
                     //Search for the last order and sort them (orders) this step is critical
                     let LAST_ORDER = pair.orders.length > 0 ? pair.orders.sort((a, b) => {
                         return new Date(b.time) - new Date(a.time);

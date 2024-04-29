@@ -96,7 +96,7 @@ const cancelOrder = async (pair, id) => {
         return response.data;
     })
     .catch(error => {
-        if(DEBUG) client.logger.error(error);
+        if(DEBUG) client.logger.error(error.data);
         return error;
     });
 }
@@ -104,8 +104,7 @@ const cancelAndReplace = async (pair, side, type, params) => {// STOP_ON_FAILURE
     return await client.cancelAndReplace(pair, side, type, 'ALLOW_FAILURE', params).then(response =>{
         if(DEBUG) client.logger.log(response.data); 
         return response.data;
-    }).catch(error => client.logger.error(error))
-    .then(response => client.logger.log(response.data))
+    })
     .catch(error => {
         if(DEBUG) client.logger.error(error);
         return error;
