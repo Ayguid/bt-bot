@@ -1,5 +1,5 @@
 const percent = (percent, num) => {
-    return Number((num / 100) * percent);
+    return (num / 100) * percent;
 }
 
 const roundDown = (number, decimals) =>{
@@ -7,15 +7,24 @@ const roundDown = (number, decimals) =>{
     return ( Math.floor( number * Math.pow(10, decimals) ) / Math.pow(10, decimals) );
 }
 
-const minusPercent =(n,p) => {
+const minusPercent = (p, n) => {
     return n - (n * (p/100));
 }
-const plusPercent =(n,p) => {
+const plusPercent = (p, n) => {
     return n + (n * (p/100));
+}
+const timePassed = (start) =>{
+    // get the end time 
+    let end = Date.now(); 
+    // elapsed time in milliseconds 
+    let elapsed = end - start;    
+    // converting milliseconds to seconds  
+    // by dividing 1000 
+    return (elapsed/1000); 
 }
   
 //console.log(minusPercent(100,30)); // 70
 
 //console.log(plusPercent(60000, 0.7));
 
-module.exports = { percent , roundDown, minusPercent, plusPercent };
+module.exports = { percent , roundDown, minusPercent, plusPercent, timePassed };

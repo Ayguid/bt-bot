@@ -22,11 +22,12 @@ class Bot {
             this.exit_loop = true;
             this.debug = true;
             this.new_order_counter = 0;
-            this.partial_counter = 0;
+            this.new_order_counter_limit = 10; // delay for recancelling orders etc
             this.loss_up_counter = 0;
             this.loss_down_counter = 0;
-            this.new_order_counter_limit = 10; // delay for recancelling orders etc
-            this.counter_limit = 50; // delay for recancelling orders etc
+            this.loss_up_down_limit = 10;  // delay for recancelling orders etc
+            this.partial_counter = 0;
+            this.partial_counter_limit = 50; // delay for recancelling orders etc
         }
     }
     startBot() {
@@ -76,10 +77,14 @@ class Bot {
                         const upTrigger = (LAST_ORDER.price + percent(pair.hghPcnt, LAST_ORDER.price));
                         const loss_contition_down = pair.currentPrice.price < downTrigger && LAST_ORDER.side == 'SELL';// sell mentality
                         const loss_contition_up = pair.currentPrice.price > upTrigger && LAST_ORDER.side == 'BUY';// sell mentality
-                        console.log('Watch for- DOWN:', downTrigger, 'UP:', upTrigger);
+                        if (LAST_ORDER.side == 'SELL'){
+                            console.log('Watch for- DOWN:', downTrigger, 'Current Price:', pair.currentPrice.price, 'Order Price:', LAST_ORDER.price, 'Order Side:', LAST_ORDER.side);
+                        }else {
+                            console.log('Watch for- UP:', upTrigger, 'Current Price:', pair.currentPrice.price, 'Order Price:', LAST_ORDER.price, 'Order Side:', LAST_ORDER.side);
+                        }
                         if(loss_contition_down){// sell mentality, reprice if conditions are 2far off down
                             console.log('Waiting to reorder loss down', this.loss_down_counter );
-                            if(this.loss_down_counter >= this.counter_limit){
+                            if(this.loss_down_counter >= this.loss_up_down_limit){
                                 console.log(`PRICE HAS FALLEN BY ${pair.lowPcnt}%`);                          
                                 console.log('SELLING/LOW');
                                 this.loss_down_counter = 0;
@@ -94,7 +99,7 @@ class Bot {
                         } 
                         else if (loss_contition_up) {// sell mentality reprice if conditions are 2far off up
                             console.log('Waiting to reorder loss up', this.loss_up_counter );
-                            if(this.loss_up_counter >= this.counter_limit){
+                            if(this.loss_up_counter >= this.loss_up_down_limit){
                                 console.log(`PRICE HAS RISEN BY ${pair.hghPcnt}%`);                          
                                 console.log('REBUYING/HIGH');
                                 this.loss_up_counter = 0;
@@ -112,7 +117,7 @@ class Bot {
                     else if (LAST_ORDER.status == 'PARTIALLY_FILLED') {
                         console.log('WAITING FOR PARTIALLY FILLED ORDER', this.partial_counter);
                         this.partial_counter++;
-                        if(this.partial_counter >= this.counter_limit){//only for one side? sell and buy needed
+                        if(this.partial_counter >= this.partial_counter_limit){//only for one side? sell and buy needed
                             console.log(`Too much waiting`);                          
                             console.log('REBUYING/HIGH');
                             this.partial_counter = 0;
@@ -140,7 +145,7 @@ class Bot {
                                 type = 'SELL';
                                 price = (LAST_ORDER.price + pair.currentPrice.price)/2 + percentage//Number().toFixed(4); //promediar con avgPrice ? sino el valor siempre va a ser el mismo
                                 //price = Number(pair.avgPrice.price) + percentage//Number().toFixed(4);
-                            } else if (LAST_ORDER.side == 'SELL') {
+                            } else if (LAST_ORDER.side == 'SELL') { // use stochRSI indicator here for buy orders
                                 type = 'BUY';
                                 price = pair.avgPrice.price - percentage//Number().toFixed(4); 
                                 //price = Number(LAST_ORDER.price) - percentage//Number().toFixed(4);
