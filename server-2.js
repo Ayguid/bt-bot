@@ -2,7 +2,7 @@ const express = require('express');
 const app = express();
 const ip = require('ip');
 const ipAddress = ip.address();
-const port = 7000;
+const port = 8000;
 //
 const { Bot } = require('./scripts/bot-engine-2.js');
 //
@@ -43,21 +43,51 @@ const botEmitterCB = async (msg, data = false) => {
 let PAIRS = [
     {
         key: 'BTCUSDT',
-        splitSymbol: 'BTC_USDT',//for balance search, later on...
-        tgtPcnt: 1, 
-        lowPcnt: 1.2, 
-        hghPcnt: 1.2,
-        // 
+        splitSymbol: 'BTC_USDT',    //used for balance/wallet/asset search, later on...
+        //target %
+        tgtPcnt: 1,                 //ammount desired to gain
+        buyLPcnt: 0.25,             //% of currentPrice subtracted for NEW and PARTIAL BUY orders! vs avgPrice or currentPrice
+        //triggers %
+        lowTriggPcnt: 1.4,          //trigger if i want to sell and price goes down  %of order price vs currentPrice
+        hghTriggPcnt: 1.4,          //trigger if i want to buy and price goes up %of order price vs currentPrice
+        repUpPct: 0.5,              //% used to reprice order in loss_up condition vs currentPrice
+        repDwPct: 0.5,              //% used to reprice order in loss_down condition vs avgPrice
+        //decimals
         stableDecimals: 1,
         tokenDecimals: 6,
-        //
-        defaultQty: 0.001,//btc available for trading
-        //
-        partialWait: 20,//secs until recalc of partial order
-        //
-        stochBuyLimit: 30,//
-        macdBuyLimit: -190//190
+        //Qty
+        defaultQty: 0.001,          //btc available for trading
+        //Waits
+        partialWait: 20,            //secs until recalc of partial order
+        //Indicator limits
+        stochBuyLimit: 30,          //
+        macdBuyLimit: -150,         //190
+        adxBuyLimit: 20             //190
+    },
+    /*
+    {
+        key: 'ETHUSDT',
+        splitSymbol: 'ETH_USDT',    //used for balance/wallet/asset search, later on...
+        //target %
+        tgtPcnt: 1,                 //ammount desired to gain
+        buyLPcnt: 0.25,             //% of currentPrice subtracted for NEW and PARTIAL BUY orders! vs avgPrice or currentPrice
+        //triggers %
+        lowTriggPcnt: 1.2,          //trigger if i want to sell and price goes up %of order price vs currentPrice
+        hghTriggPcnt: 1.2,          //trigger if i want to buy and price goes up %of order price vs currentPrice
+        repUpPct: 0.5,              //% used to reprice order in loss_up condition vs currentPrice
+        repDwPct: 0.5,              //% used to reprice order in loss_down condition vs avgPrice
+        //decimals
+        stableDecimals: 1,
+        tokenDecimals: 6,
+        //Qty
+        defaultQty: 0.001,          //btc available for trading
+        //Waits
+        partialWait: 20,            //secs until recalc of partial order
+        //Indicator limits
+        stochBuyLimit: 30,          //
+        macdBuyLimit: -190          //190
     }
+    */
 ];
 //start bot in server
 const binanceBot = new Bot(PAIRS, botEmitterCB, 5000); //last parameter is delay, it has a defualt value of 2secs if no delay is passed

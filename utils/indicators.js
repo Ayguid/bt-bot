@@ -1,11 +1,11 @@
-const { StochasticRSI, MACD, ADX } = require('technicalindicators'); //https://github.com/anandanand84/technicalindicators?tab=readme-ov-file#readme
+const { StochasticRSI, MACD, ADX, AwesomeOscillator } = require('technicalindicators'); //https://github.com/anandanand84/technicalindicators?tab=readme-ov-file#readme
 
 const getIndicators = async (candleArray) =>{
     const filterCandlesHigh = candleArray.map(candle => Number(candle[2]));   //2 is the index for closing price
     const filterCandlesLow = candleArray.map(candle => Number(candle[3]));    //3 is the index for closing price
     const filterCandlesClosing = candleArray.map(candle => Number(candle[4]));//4 is the index for closing price
-   
-    //StochasticRSI
+    const filterCandlesVolume = candleArray.map(candle => Number(candle[5]));//4 is the index for closing price
+    //StochasticRSI ok
     const stoch_rsi = StochasticRSI.calculate({
         values: filterCandlesClosing,
         rsiPeriod: 14,
@@ -14,7 +14,7 @@ const getIndicators = async (candleArray) =>{
         dPeriod: 3,
     });
     const CURRENT_STOCH_RSI = stoch_rsi[stoch_rsi.length -1];
-    //MACD
+    //MACD ok
     const macd = MACD.calculate({
         values: filterCandlesClosing,
         fastPeriod: 12,
@@ -24,21 +24,36 @@ const getIndicators = async (candleArray) =>{
         SimpleMASignal: false
     });
     const CURRENT_MACD = macd[macd.length -1];
-    //ADX
+    //ADX ??
     const adx =  ADX.calculate({
         close: filterCandlesClosing,
         high: filterCandlesHigh,
         low: filterCandlesLow,
-        period : 14
+        period: 14
     });
     const CURRENT_ADX = adx[adx.length -1];
+    //Awesome oscilator (AO) ??
+    const ao = AwesomeOscillator.calculate({
+        high: filterCandlesHigh,
+        low: filterCandlesLow,
+        close: filterCandlesClosing,
+        volume : filterCandlesVolume,
+        fastPeriod : 5,
+        slowPeriod : 34,
+        format : (a)=>parseFloat(a.toFixed(2))
+    });
+    const CURRENT_AO = ao[ao.length -1];
+    
+    //
     return {
         stoch_rsi,
         CURRENT_STOCH_RSI,
         macd,
         CURRENT_MACD,
         adx,
-        CURRENT_ADX
+        CURRENT_ADX,
+        ao,
+        CURRENT_AO
     };
 }
 
