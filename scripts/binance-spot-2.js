@@ -2,12 +2,20 @@
 //const EventEmitter = require('node:events');
 //KEYS AND URL
 require('dotenv').config(); // env config
-const apiKey = process.env.BINANCE_API_KEY || '';
-const apiSecret = process.env.BINANCE_API_SECRET || '';
-const TEST_URL = 'https://testnet.binance.vision/';
 // BINANCE CONECTOR
+const TESTNET = process.env.BINANCE_API_SECRET_TEST || '';
 const { Spot } = require('@binance/connector'); //https://github.com/binance/binance-connector-node/
-const client = new Spot(apiKey, apiSecret); //https://docs.binance.us/#klines-websocket , { baseURL: TEST_URL}
+let apiKey , apiSecret, client;
+if(TESTNET){
+    const TEST_URL = 'https://testnet.binance.vision/';
+    apiKey = process.env.BINANCE_API_KEY_TEST || '';
+    apiSecret = process.env.BINANCE_API_SECRET_TEST || '';
+    client = new Spot(apiKey, apiSecret, { baseURL: TEST_URL}); //https://docs.binance.us/#klines-websocket , { baseURL: TEST_URL}
+}else{
+    apiKey = process.env.BINANCE_API_KEY || '';
+    apiSecret = process.env.BINANCE_API_SECRET || '';
+    client = new Spot(apiKey, apiSecret); //https://docs.binance.us/#klines-websocket , { baseURL: TEST_URL}
+}
 
 const DEBUG = false;
 
@@ -21,7 +29,6 @@ const fetchMyAccount = async () => {
         return error;
     });
 }
-
 const avgPrice = async (pair) => {
     return await client.avgPrice(pair).then(response => {
         if(DEBUG) client.logger.log(response.data);
@@ -42,7 +49,6 @@ const tickerPrice = async (pair) => {
         return error;
     });
 }
-
 const fetchMyOrders = async (pair) => {
     return await client.allOrders(pair, {limit: 30}).then(response => {
         if(DEBUG) client.logger.log(response.data);
@@ -52,7 +58,6 @@ const fetchMyOrders = async (pair) => {
         return error;
     });
 }
-
 const fetchMyTrades = async (pair) => {
     return await client.myTrades(pair).then(response => {
         if(DEBUG) client.logger.log(response.data);
@@ -62,7 +67,6 @@ const fetchMyTrades = async (pair) => {
         return error;
     });
 }
-
 const getOrder = async (pair, id) => {
     return await client.getOrder(pair, {
         orderId: id
@@ -74,7 +78,6 @@ const getOrder = async (pair, id) => {
         return error;
     });
 }
-
 const placeOrder = async (pair, side, type, params) => {
     return await client.newOrder(pair, side, type, params).then(response => {
         if(DEBUG) client.logger.log(response.data); 
@@ -85,7 +88,6 @@ const placeOrder = async (pair, side, type, params) => {
         return error;
     });
 }
-
 const cancelOrder = async (pair, id) => {
     return await client.cancelOrder(pair, {
         orderId: id
@@ -94,11 +96,10 @@ const cancelOrder = async (pair, id) => {
         return response.data;
     })
     .catch(error => {
-        if(DEBUG) client.logger.error(error);
+        if(DEBUG) client.logger.error(error.data);
         return error;
     });
 }
-
 const cancelAndReplace = async (pair, side, type, params) => {// STOP_ON_FAILURE  
     return await client.cancelAndReplace(pair, side, type, 'ALLOW_FAILURE', params).then(response =>{
         if(DEBUG) client.logger.log(response.data); 
@@ -109,8 +110,6 @@ const cancelAndReplace = async (pair, side, type, params) => {// STOP_ON_FAILURE
         return error;
     });
 }
-
-
 const assetDetail = async (pair) => {
     return await client.assetDetail({ asset: pair })
     .then(response => {
@@ -122,9 +121,8 @@ const assetDetail = async (pair) => {
         return error;
     });
 }
-
 const klines = async (pair, interval) => {
-    return await client.klines(pair, interval, { limit: 150 }).then(response => {
+    return await client.klines(pair, interval, { limit: 50 }).then(response => {
         if(DEBUG) client.logger.log(response.data);
         return response.data;
     })
@@ -133,7 +131,6 @@ const klines = async (pair, interval) => {
         return error;
     });
 }
-
 
 module.exports = { fetchMyAccount, avgPrice, tickerPrice, fetchMyOrders, fetchMyTrades, placeOrder, getOrder, cancelOrder, cancelAndReplace, assetDetail, klines};
 
