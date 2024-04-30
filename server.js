@@ -4,8 +4,8 @@ const ip = require('ip');
 const ipAddress = ip.address();
 const port = 5000;
 
-const { Bot } = require('./bot-engine.js');
-const { saveData } = require('./fileManager.js');
+const { Bot } = require('./scripts/bot-engine.js');
+const { saveData } = require('./utils/fileManager.js');
 
 const server = app.listen(port, function() {
     console.log('server running on port', port);
@@ -51,7 +51,9 @@ const botEmitterCB = async (msg, data = false) => {
 //start bot in server
 let ACCOUNT = {}; //empty for now, not necesary bot bot constructor ,, but,,,,
 let PAIRS = [// add pairs here,
-    { key: 'BTCUSDT', splitSymbol: 'BTC_USDT', tgtPcnt: 0.7, lowPcnt: 1.5, hghPcnt: 1.2, decimals: 2, defaultQty: 0.1},
+    { key: 'BTCUSDT', splitSymbol: 'BTC_USDT', tgtPcnt: 0.25, lowPcnt: 0.6, hghPcnt: 0.5, decimals: 2, defaultQty: 0.0009},
+    //{ key: 'BTCUSDT', splitSymbol: 'BTC_USDT', tgtPcnt: 0.5, lowPcnt: 1.2, hghPcnt: 1, decimals: 2, defaultQty: 0.0015},
+    //{ key: 'BTCUSDT', splitSymbol: 'BTC_USDT', tgtPcnt: 0.7, lowPcnt: 1.5, hghPcnt: 1.2, decimals: 2, defaultQty: 0.1},
     //{ key: 'BTCUSDT', splitSymbol: 'BTC_USDT', tgtPcnt: 0.7, stpPcnt: 2.5, hghPcnt: 1.2, decimals: 2, defaultQty: 0.1},
     //{ key: 'ADAUSDC', splitSymbol: 'ADA_USDC', tgtPcnt: 1, stpPcnt: 2.5, hghPcnt: 1.2, decimals: 4, defaultQty: 100}
     //{ key: 'BNBUSDC', splitSymbol: 'BNB_USDC', tgtPcnt: 1, stpPcnt: 2.5, hghPcnt: 1.2, decimals: 1, defaultQty: 1}

@@ -6,7 +6,7 @@ In its logic it has a sell mentality, to be countinued,,,
 //helpers
 const { fetchMyAccount, avgPrice, tickerPrice, fetchMyOrders, fetchMyTrades, placeOrder, getOrder, cancelAndReplace, cancelOrder } = require('./binance-spot.js');
 //const { fetchMyAccount, avgPrice, tickerPrice, fetchMyOrders, placeOrder, cancelAndReplace } = require('./binance-mock.js');
-const { percent } = require('./helpers.js');
+const { percent } = require('../utils//helpers.js');
 //GLOBAL VARS END
 
 class Bot {
@@ -22,11 +22,12 @@ class Bot {
             this.exit_loop = true;
             this.debug = true;
             this.new_order_counter = 0;
-            this.partial_counter = 0;
+            this.new_order_counter_limit = 2; // delay for recancelling orders etc
             this.loss_up_counter = 0;
             this.loss_down_counter = 0;
-            this.new_order_counter_limit = 1; // delay for recancelling orders etc
-            this.counter_limit = 250; // delay for recancelling orders etc
+            this.loss_up_down_limit = 2;  // delay for recancelling orders etc
+            this.partial_counter = 0;
+            this.partial_counter_limit = 50; // delay for recancelling orders etc
         }
     }
     startBot() {
@@ -56,7 +57,7 @@ class Bot {
                 console.log('\x1b[33m%s\x1b[0m', pair.key);
                 //Search last order
                 let LAST_ORDER = pair.orders.length > 0 ? pair.orders.sort((a, b) => {
-                    return new Date(b.time) - new Date(a.time);
+                    return new Date(b.updateTime) - new Date(a.updateTime);
                 })[0] : false;
                 // redundant condition (LAST_ORDER && pair.orders.length > 0)
                 if (LAST_ORDER && pair.orders.length > 0) { // redundant but it helps :(. Sort sometimes delays and returns undefined. Maybe return a promise from sort function/last order?
@@ -76,10 +77,14 @@ class Bot {
                         const upTrigger = (LAST_ORDER.price + percent(pair.hghPcnt, LAST_ORDER.price));
                         const loss_contition_down = pair.currentPrice.price < downTrigger && LAST_ORDER.side == 'SELL';// sell mentality
                         const loss_contition_up = pair.currentPrice.price > upTrigger && LAST_ORDER.side == 'BUY';// sell mentality
-                        console.log('Watch for- DOWN:', downTrigger, 'UP:', upTrigger);
+                        if (LAST_ORDER.side == 'SELL'){
+                            console.log('Watch for- DOWN:', downTrigger, 'Current Price:', pair.currentPrice.price, 'Order Price:', LAST_ORDER.price, 'Order Side:', LAST_ORDER.side);
+                        }else {
+                            console.log('Watch for- UP:', upTrigger, 'Current Price:', pair.currentPrice.price, 'Order Price:', LAST_ORDER.price, 'Order Side:', LAST_ORDER.side);
+                        }
                         if(loss_contition_down){// sell mentality, reprice if conditions are 2far off down
                             console.log('Waiting to reorder loss down', this.loss_down_counter );
-                            if(this.loss_down_counter >= this.counter_limit){
+                            if(this.loss_down_counter >= this.loss_up_down_limit){
                                 console.log(`PRICE HAS FALLEN BY ${pair.lowPcnt}%`);                          
                                 console.log('SELLING/LOW');
                                 this.loss_down_counter = 0;
@@ -87,29 +92,45 @@ class Bot {
                                 //return; //stop bot
                                 const rePrice = (pair.avgPrice.price + percent(pair.tgtPcnt, pair.avgPrice.price)).toFixed(1);// last change was + percent instead of - %, next try selling to avg or current price
                                 //console.log(rePrice);
-                                LAST_ORDER = await cancelAndReplace(pair.key, 'SELL', 'LIMIT', {price: rePrice, quantity: LAST_ORDER.origQty, timeInForce: 'GTC', cancelOrderId: LAST_ORDER.orderId});
-                                this.emitterCallback('order placed', LAST_ORDER);
+                                //LAST_ORDER = await cancelAndReplace(pair.key, 'SELL', 'LIMIT', {price: rePrice, quantity: LAST_ORDER.origQty, timeInForce: 'GTC', cancelOrderId: LAST_ORDER.orderId});
+                                await cancelOrder(pair.key, LAST_ORDER.orderId);  
+                                const newOrder = await placeOrder(pair.key, 'SELL', 'LIMIT', {
+                                    price: Number(rePrice).toFixed(1),
+                                    quantity: LAST_ORDER.origQty,
+                                    timeInForce: 'GTC'
+                                }); 
+                                this.emitterCallback('order placed', newOrder);
                             }
                             this.loss_down_counter++
                         } 
                         else if (loss_contition_up) {// sell mentality reprice if conditions are 2far off up
                             console.log('Waiting to reorder loss up', this.loss_up_counter );
-                            if(this.loss_up_counter >= this.counter_limit){
+                            if(this.loss_up_counter >= this.loss_up_down_limit){
                                 console.log(`PRICE HAS RISEN BY ${pair.hghPcnt}%`);                          
                                 console.log('REBUYING/HIGH');
                                 this.loss_up_counter = 0;
                                 const rePrice = (pair.currentPrice.price - percent(pair.tgtPcnt, pair.currentPrice.price)).toFixed(1);
                                 //console.log(rePrice)
-                                LAST_ORDER = await cancelAndReplace(pair.key, 'BUY', 'LIMIT', {price: rePrice, quantity: LAST_ORDER.origQty, timeInForce: 'GTC', cancelOrderId: LAST_ORDER.orderId});
-                                this.emitterCallback('order placed', LAST_ORDER);
+                                //LAST_ORDER = await cancelAndReplace(pair.key, 'BUY', 'LIMIT', {price: rePrice, quantity: LAST_ORDER.origQty, timeInForce: 'GTC', cancelOrderId: LAST_ORDER.orderId});
+                                
+                                await cancelOrder(pair.key, LAST_ORDER.orderId);  
+                                const newOrder = await placeOrder(pair.key, 'BUY', 'LIMIT', {
+                                    price: Number(rePrice).toFixed(1),
+                                    quantity: LAST_ORDER.origQty,
+                                    timeInForce: 'GTC'
+                                });  
+                                this.emitterCallback('order placed', newOrder);
                             }
                             this.loss_up_counter++;
+                        }else{
+                            this.loss_up_counter = 0;
+                            this.loss_down_counter = 0;
                         } 
                     }
                     else if (LAST_ORDER.status == 'PARTIALLY_FILLED') {
                         console.log('WAITING FOR PARTIALLY FILLED ORDER', this.partial_counter);
                         this.partial_counter++;
-                        if(this.partial_counter >= this.counter_limit){//only for one side? sell and buy needed
+                        if(this.partial_counter >= this.partial_counter_limit){//only for one side? sell and buy needed
                             console.log(`Too much waiting`);                          
                             console.log('REBUYING/HIGH');
                             this.partial_counter = 0;
@@ -137,7 +158,7 @@ class Bot {
                                 type = 'SELL';
                                 price = (LAST_ORDER.price + pair.currentPrice.price)/2 + percentage//Number().toFixed(4); //promediar con avgPrice ? sino el valor siempre va a ser el mismo
                                 //price = Number(pair.avgPrice.price) + percentage//Number().toFixed(4);
-                            } else if (LAST_ORDER.side == 'SELL') {
+                            } else if (LAST_ORDER.side == 'SELL') { // use stochRSI indicator here for buy orders
                                 type = 'BUY';
                                 price = pair.avgPrice.price - percentage//Number().toFixed(4); 
                                 //price = Number(LAST_ORDER.price) - percentage//Number().toFixed(4);
