@@ -122,7 +122,7 @@ const assetDetail = async (pair) => {
     });
 }
 const klines = async (pair, interval) => {
-    return await client.klines(pair, interval, { limit: 50 }).then(response => {
+    return await client.klines(pair, interval, { limit: 120 }).then(response => {
         if(DEBUG) client.logger.log(response.data);
         return response.data;
     })

@@ -33,8 +33,11 @@ const getIndicators = async (candleArray) =>{
     });
     const CURRENT_ADX = adx[adx.length -1];
     return {
+        stoch_rsi,
         CURRENT_STOCH_RSI,
+        macd,
         CURRENT_MACD,
+        adx,
         CURRENT_ADX
     };
 }

@@ -25,7 +25,7 @@ io.on('connection', function(socket) {
         binanceBot.stopBot();
     });
 });
-//botEmitterCB for bot updates
+//callback for bot updates to interface through websocket
 const botEmitterCB = async (msg, data = false) => {
     //console.log(msg);
     let account  = binanceBot.account;
@@ -39,11 +39,11 @@ const botEmitterCB = async (msg, data = false) => {
     await io.emit('ACCOUNT_MESSAGE', account);
     await io.emit('PAIRS_MESSAGE', pairs); 
 }
-//start bot in server
-let PAIRS = [// add pairs here,
+//Pairs array for trading, add/edit pairs here.
+let PAIRS = [
     {
         key: 'BTCUSDT',
-        splitSymbol: 'BTC_USDT',//for balance search later on
+        splitSymbol: 'BTC_USDT',//for balance search, later on...
         tgtPcnt: 1, 
         lowPcnt: 1.2, 
         hghPcnt: 1.2,
@@ -53,13 +53,12 @@ let PAIRS = [// add pairs here,
         //
         defaultQty: 0.001,//btc available for trading
         //
-        partialWait: 20,//secs to wait until recalc of partial order
+        partialWait: 20,//secs until recalc of partial order
         //
         stochBuyLimit: 30,//
         macdBuyLimit: -190//190
-    },
-    //{ key: 'BTCUSDT', splitSymbol: 'BTC_USDT', tgtPcnt: 0.5, lowPcnt: 1.2, hghPcnt: 1, decimals: 2, defaultQty: 0.0015},
-    //{ key: 'BTCUSDT', splitSymbol: 'BTC_USDT', tgtPcnt: 0.7, lowPcnt: 1.5, hghPcnt: 1.2, decimals: 2, defaultQty: 0.1},
+    }
 ];
-const binanceBot = new Bot(PAIRS, botEmitterCB, 5000); //last parameter is delay, it has a defualt value of 1sec if no delay is passed
+//start bot in server
+const binanceBot = new Bot(PAIRS, botEmitterCB, 5000); //last parameter is delay, it has a defualt value of 2secs if no delay is passed
 binanceBot.startBot();
