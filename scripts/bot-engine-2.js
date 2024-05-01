@@ -30,13 +30,13 @@ class Bot {
         }
     }
     startBot() {
-        if (!this.exit_loop) { return }//to prevent restart
+        if (!this.exit_loop) { return }//Prevent restart
         console.log('\x1b[33m%s\x1b[0m', 'Starting bot');
         this.exit_loop = !this.exit_loop;
         this.botLoop();
     }
     stopBot() {
-        if (this.exit_loop) { return }//to prevent restop
+        if (this.exit_loop) { return }//Prevent restop
         console.log('\x1b[33m%s\x1b[0m', 'Stopping bot');
         this.exit_loop = !this.exit_loop;
         this.bot_runs = 0;
@@ -51,6 +51,14 @@ class Bot {
         console.log(`ExQty ${verb}:`, order.executedQty);
         console.log(`Status:`, order.status);
     }
+    aproveBuyIndicators = (pair) =>{
+        return [
+            pair.indicators.CURRENT_STOCH_RSI.k < pair.stochBuyLimit,
+            pair.indicators.CURRENT_MACD.MACD < pair.macdBuyLimit,
+            pair.indicators.CURRENT_ADX.adx < pair.adxBuyLimit,
+            pair.indicators.CURRENT_AO < pair.aoBuyLimit
+        ].filter(element=>element).length >= 2; //at least 2 conditions are met between 4 indicators
+    }
     //
     async handleCanceledOrder(){
         console.log(notice('------ Doing something according to canceled order'));
@@ -60,35 +68,47 @@ class Bot {
         this.printOrderStatus(order);
         //
         const profit = calculateProfit(pair.currentPrice.price, order.price);
-        console.log('Profit would be:', profit);
+        if(order.side == 'SELL') console.log('Profit would be:', profit);
         //
         const upTrigger = plusPercent(pair.hghTriggPcnt, order.price);
-        const downTrigger = minusPercent(pair.lowTriggPcnt, order.price);
+        const downTrigger = minusPercent(pair.lowTriggPcnt, order.price); // change to ask for paid price vs?
+        /*
+        const paidPrice = minusPercent(pair.buyLPcnt, order.price);
+        */
         const loss_contition_up = pair.currentPrice.price > upTrigger && order.side == 'BUY';
         const loss_contition_down = pair.currentPrice.price < downTrigger && order.side == 'SELL';
+        const orderPriceD = order.price;
         pair.triggers = { //add triggers to pairs data for display purposes
-            downTrigger,
-            upTrigger
+            ...(order.side == 'BUY' && {upTrigger}),
+            ...(order.side == 'SELL' && {downTrigger}),
+            orderPriceD
         }
         //Print watch values for triggers according to order side/trigger side
         console.log(`Watch for- ${order.side == 'SELL'? 'DOWN': 'UP'}:`, order.side == 'SELL'? downTrigger : upTrigger, 'Current Price:', pair.currentPrice.price);
         //
         let rePrice;
         //
-        if (loss_contition_up) {// BUY mentality reprice if conditions are 2far up
+        const isBuyContition = this.aproveBuyIndicators(pair);
+        //
+        if (loss_contition_up) {// BUY reprice if conditions are 2far up
             console.log(warn(`PRICE IS UP BY ${pair.hghTriggPcnt}%`));                          
-            console.log('REBUYING/HIGH');
+            //console.log('REBUYING/HIGH');
             rePrice = minusPercent(pair.repUpPct, pair.currentPrice.price).toFixed(pair.stableDecimals);
         }
-        else  if(loss_contition_down){// SELL mentality, reprice if conditions are 2far down
+        else if(loss_contition_down){// SELL reprice if conditions are 2far down, maybe add timer to wait before reselling lower
             console.log(warn(`PRICE IS DOWN BY ${pair.lowTriggPcnt}%`));                          
-            console.log('SELLING/LOW');
+            //console.log('SELLING/LOW');
             rePrice = plusPercent(pair.repDwPct, pair.avgPrice.price).toFixed(pair.stableDecimals);
-        } 
-        if(loss_contition_up || loss_contition_down){// only execute if x condition
+        }
+        // 
+        if((loss_contition_up && isBuyContition) || loss_contition_down){
+            console.log('Repricing - ', order.side, rePrice);
             const newOrder = await cancelAndReplace(pair.key, order.side, 'LIMIT', {price: rePrice, quantity: order.origQty, timeInForce: 'GTC', cancelOrderId: order.orderId});
             await this.emitterCallback('order placed', newOrder); 
+        }else if(loss_contition_up && !isBuyContition){
+            console.log(notice('Waiting indicators to reprice buy'));
         }
+        //
     }
     async handleFilledOrder(order, pair){
         console.log(notice('------ Doing something according to filled order'));
@@ -101,7 +121,7 @@ class Bot {
             return minusPercent(pair.buyLPcnt, pair.avgPrice.price); //buy price % buyLPcnt avgPrice
         })();
         //
-        const isBuyContition = pair.indicators.CURRENT_STOCH_RSI.k < pair.stochBuyLimit && pair.indicators.CURRENT_MACD.signal < pair.macdBuyLimit;
+        const isBuyContition = this.aproveBuyIndicators(pair);
         //
         if(newSide == 'SELL' || (newSide == 'BUY' && isBuyContition)){
             console.log(grnotice('PLACING ORDER:', newSide, price));
@@ -159,6 +179,17 @@ class Bot {
                     let LAST_ORDER = pair.orders.length > 0 ? pair.orders.sort((a, b) => {
                         return new Date(b.time) - new Date(a.time);
                     })[0] : false;
+                    //to be used later on with reprice, not implemented yet
+                    /*
+                    let LAST_BUY_ORDER = false;
+                    for (let i = 0; i < pair.orders.length; i++) {
+                        if (pair.orders[i].status == 'FILLED' && pair.orders[i].side == 'BUY') { 
+                            LAST_BUY_ORDER = pair.orders[i];
+                            break; 
+                        }
+                    }
+                    console.log(LAST_BUY_ORDER);
+                    */
                     //
                     if(!LAST_ORDER) console.log('Create starting order manually'); 
                     else{

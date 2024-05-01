@@ -45,50 +45,28 @@ let PAIRS = [
         key: 'BTCUSDT',
         splitSymbol: 'BTC_USDT',    //used for balance/wallet/asset search, later on...
         //target %
-        tgtPcnt: 1,                 //ammount desired to gain
+        tgtPcnt: 1.2,               //ammount desired to gain
         buyLPcnt: 0.25,             //% of currentPrice subtracted for NEW and PARTIAL BUY orders! vs avgPrice or currentPrice
-        //triggers %
-        lowTriggPcnt: 1.4,          //trigger if i want to sell and price goes down  %of order price vs currentPrice
-        hghTriggPcnt: 1.4,          //trigger if i want to buy and price goes up %of order price vs currentPrice
-        repUpPct: 0.5,              //% used to reprice order in loss_up condition vs currentPrice
-        repDwPct: 0.5,              //% used to reprice order in loss_down condition vs avgPrice
-        //decimals
-        stableDecimals: 1,
-        tokenDecimals: 6,
-        //Qty
+        //
+        hghTriggPcnt: 1,            //trigger if i want to buy and price goes up %of order price vs currentPrice
+        repUpPct: 0.025,            //% used to reprice order in loss_up condition vs currentPrice 'BUY' - currentPrice-X%
+        //
+        lowTriggPcnt: 1.8,          //trigger if i want to sell and price goes down  %of order price vs currentPrice
+        repDwPct: 1,                //% used to reprice order in loss_down condition vs avgPrice 'SELL' +
+        //decimals                  //
+        stableDecimals: 1,          //
+        tokenDecimals: 6,           //    
+        //Qty                           
         defaultQty: 0.001,          //btc available for trading
         //Waits
         partialWait: 20,            //secs until recalc of partial order
         //Indicator limits
-        stochBuyLimit: 30,          //
-        macdBuyLimit: -150,         //190
-        adxBuyLimit: 20             //190
-    },
-    /*
-    {
-        key: 'ETHUSDT',
-        splitSymbol: 'ETH_USDT',    //used for balance/wallet/asset search, later on...
-        //target %
-        tgtPcnt: 1,                 //ammount desired to gain
-        buyLPcnt: 0.25,             //% of currentPrice subtracted for NEW and PARTIAL BUY orders! vs avgPrice or currentPrice
-        //triggers %
-        lowTriggPcnt: 1.2,          //trigger if i want to sell and price goes up %of order price vs currentPrice
-        hghTriggPcnt: 1.2,          //trigger if i want to buy and price goes up %of order price vs currentPrice
-        repUpPct: 0.5,              //% used to reprice order in loss_up condition vs currentPrice
-        repDwPct: 0.5,              //% used to reprice order in loss_down condition vs avgPrice
-        //decimals
-        stableDecimals: 1,
-        tokenDecimals: 6,
-        //Qty
-        defaultQty: 0.001,          //btc available for trading
-        //Waits
-        partialWait: 20,            //secs until recalc of partial order
-        //Indicator limits
-        stochBuyLimit: 30,          //
-        macdBuyLimit: -190          //190
+        stochBuyLimit: 30,          // They should be changed according to candle timeframe, now its 2h
+        macdBuyLimit: -400,         // *   
+        adxBuyLimit: 30,            // *
+        aoBuyLimit: -1000,          // *
     }
-    */
 ];
 //start bot in server
-const binanceBot = new Bot(PAIRS, botEmitterCB, 5000); //last parameter is delay, it has a defualt value of 2secs if no delay is passed
+const binanceBot = new Bot(PAIRS, botEmitterCB, 10000); //last parameter is delay, it has a default value of 2secs if no delay is passed
 binanceBot.startBot();

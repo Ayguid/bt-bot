@@ -53,7 +53,8 @@ const getIndicators = async (candleArray) =>{
         adx,
         CURRENT_ADX,
         ao,
-        CURRENT_AO
+        CURRENT_AO,
+        filterCandlesClosing
     };
 }
 
