@@ -62,9 +62,9 @@ let PAIRS = [
         partialWait: 20,            //secs until recalc of partial order
         //Indicator limits
         stochBuyLimit: 30,          // They should be changed according to candle timeframe, now its 2h
-        macdBuyLimit: -400,         // *   
-        adxBuyLimit: 30,            // *
-        aoBuyLimit: -1000,          // *
+        macdBuyLimit: -550,         // *   
+        adxBuyLimit: 20,            // *
+        aoBuyLimit: -1900,          // *
     }
 ];
 //start bot in server

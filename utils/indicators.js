@@ -1,10 +1,10 @@
 const { StochasticRSI, MACD, ADX, AwesomeOscillator } = require('technicalindicators'); //https://github.com/anandanand84/technicalindicators?tab=readme-ov-file#readme
 
 const getIndicators = async (candleArray) =>{
-    const filterCandlesHigh = candleArray.map(candle => Number(candle[2]));   //2 is the index for closing price
-    const filterCandlesLow = candleArray.map(candle => Number(candle[3]));    //3 is the index for closing price
+    const filterCandlesHigh = candleArray.map(candle => Number(candle[2]));   //2 is the index for high price
+    const filterCandlesLow = candleArray.map(candle => Number(candle[3]));    //3 is the index for low price
     const filterCandlesClosing = candleArray.map(candle => Number(candle[4]));//4 is the index for closing price
-    const filterCandlesVolume = candleArray.map(candle => Number(candle[5]));//4 is the index for closing price
+    const filterCandlesVolume = candleArray.map(candle => Number(candle[5])); //5 is the index for volume
     //StochasticRSI ok
     const stoch_rsi = StochasticRSI.calculate({
         values: filterCandlesClosing,
@@ -77,4 +77,28 @@ module.exports = { getIndicators };
     "0"                 //11-Ignore.
   ]
 ]
+*/
+
+/*
+
+function shouldBuy(macd, stochRSI, ao, adx) {
+    const macdCrossUp = macd.histogram[macd.histogram.length - 1] > 0 && macd.histogram[macd.histogram.length - 2] <= 0;
+    const stochRSIOK = stochRSI.k[stochRSI.k.length - 1] < 0.8;
+    const aoPositive = ao[ao.length - 1] > 0;
+    const adxStrong = adx.adx[adx.adx.length - 1] > 20;
+
+    return macdCrossUp && stochRSIOK && aoPositive && adxStrong;
+}
+
+function shouldSell(macd, stochRSI, ao, adx) {
+    const macdCrossDown = macd.histogram[macd.histogram.length - 1] < 0 && macd.histogram[macd.histogram.length - 2] >= 0;
+    const stochRSIOverbought = stochRSI.k[stochRSI.k.length - 1] > 0.8;
+    const aoNegative = ao[ao.length - 1] < 0;
+    const adxStrong = adx.adx[adx.adx.length - 1] > 20;
+
+    return macdCrossDown && stochRSIOverbought && aoNegative && adxStrong;
+}
+
+
+
 */
