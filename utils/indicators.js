@@ -1,6 +1,7 @@
 const { StochasticRSI, MACD, ADX, AwesomeOscillator } = require('technicalindicators'); //https://github.com/anandanand84/technicalindicators?tab=readme-ov-file#readme
 
 const getIndicators = async (candleArray) =>{
+    if(!Array.isArray(candleArray)) {console.log(candleArray); return;}
     const filterCandlesHigh = candleArray.map(candle => Number(candle[2]));   //2 is the index for high price
     const filterCandlesLow = candleArray.map(candle => Number(candle[3]));    //3 is the index for low price
     const filterCandlesClosing = candleArray.map(candle => Number(candle[4]));//4 is the index for closing price

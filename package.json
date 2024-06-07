@@ -18,6 +18,7 @@
     "scripts": {
         "start": "node ./server",
         "start-2": "node ./server-2",
-        "start-2-hot": "nodemon ./server-2"
+        "start-2-hot": "nodemon ./server-2",
+        "start-signals-hot": "nodemon ./signals"
     }
 }
