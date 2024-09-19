@@ -141,7 +141,7 @@ let lowestPrice = 0;
 let stopLossActive = false;
 const TRAILING_PERCENT = 0.002;  // 2%
 const STOP_LOSS_PERCENT = 0.0005;  // 0.5%
-
+const MAINPAIR = 'BTCFDUSD'
 
 const sellBTC = async (pair, price, qty) => {
   console.log(`Selling BTC at ${price}`);
@@ -184,13 +184,13 @@ const botLoop = async ()=> {
         const btcBalance = account.balances.find(asset => asset.asset == 'BTC');
         const freeBtc = Number(btcBalance.free);
         const lockedBtc = Number(btcBalance.locked);
-        const usdtBalance = account.balances.find(asset => asset.asset == 'USDT');
+        const usdtBalance = account.balances.find(asset => asset.asset == 'FDUSD');
         const freeUsdt = Number(usdtBalance.free);
         const lockedUsdt = Number(usdtBalance.locked);
         console.log(`Total BTC: ${freeBtc + lockedBtc}`);
-        console.log(`Total USDT: ${freeUsdt + lockedUsdt}`);
+        console.log(`Total FDUSD: ${freeUsdt + lockedUsdt}`);
         //
-        const currentPrice = await tickerPrice('BTCUSDT');
+        const currentPrice = await tickerPrice(MAINPAIR);
         const parsedPrice = Math.floor((currentPrice.price*100)/100);//Number(currentPrice.price).toFixed(2);
         console.dir(`Current price: ${parsedPrice}`);
         //
@@ -206,11 +206,11 @@ const botLoop = async ()=> {
             if (parsedPrice > highestPrice) {
               highestPrice = parsedPrice;
             } else if (parsedPrice <= highestPrice * (1 - TRAILING_PERCENT)) {
-              await sellBTC('BTCUSDT', parsedPrice, freeBtc);
+              await sellBTC(MAINPAIR, parsedPrice, freeBtc);
               btcHold = false;
               lowestPrice = parsedPrice;
             } else if (stopLossActive && parsedPrice <= highestPrice * (1 - STOP_LOSS_PERCENT)) {
-              await sellBTC('BTCUSDT', parsedPrice, freeBtc);
+              await sellBTC(MAINPAIR, parsedPrice, freeBtc);
               btcHold = false;
               lowestPrice = parsedPrice;
             }
@@ -219,11 +219,11 @@ const botLoop = async ()=> {
             if (parsedPrice < lowestPrice) {
               lowestPrice = parsedPrice;
             } else if (parsedPrice >= lowestPrice * (1 + TRAILING_PERCENT)) {
-              await buyBTC('BTCUSDT', parsedPrice, usdtToBtcQuantity);
+              await buyBTC(MAINPAIR, parsedPrice, usdtToBtcQuantity);
               btcHold = true;
               highestPrice = parsedPrice;
             } else if (stopLossActive && parsedPrice >= lowestPrice * (1 + STOP_LOSS_PERCENT)) {
-              await buyBTC('BTCUSDT', parsedPrice, usdtToBtcQuantity);
+              await buyBTC(MAINPAIR, parsedPrice, usdtToBtcQuantity);
               btcHold = true;
               highestPrice = parsedPrice;
             }
