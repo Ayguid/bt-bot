@@ -51,7 +51,7 @@ const botEmitterCB = async (msg, data = false) => {
 //start bot in server
 let ACCOUNT = {}; //empty for now, not necesary bot bot constructor ,, but,,,,
 let PAIRS = [// add pairs here,
-    { key: 'BTCUSDT', splitSymbol: 'BTC_USDT', tgtPcnt: 0.25, lowPcnt: 0.6, hghPcnt: 0.5, decimals: 2, defaultQty: 0.0009},
+    { key: 'BTCUSDT', splitSymbol: 'BTC_USDT', tgtPcnt: 0.8, lowPcnt: 2, hghPcnt: 2, decimals: 2, defaultQty: 0.0009},
     //{ key: 'BTCUSDT', splitSymbol: 'BTC_USDT', tgtPcnt: 0.5, lowPcnt: 1.2, hghPcnt: 1, decimals: 2, defaultQty: 0.0015},
     //{ key: 'BTCUSDT', splitSymbol: 'BTC_USDT', tgtPcnt: 0.7, lowPcnt: 1.5, hghPcnt: 1.2, decimals: 2, defaultQty: 0.1},
     //{ key: 'BTCUSDT', splitSymbol: 'BTC_USDT', tgtPcnt: 0.7, stpPcnt: 2.5, hghPcnt: 1.2, decimals: 2, defaultQty: 0.1},
