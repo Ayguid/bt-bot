@@ -141,12 +141,13 @@ let lowestPrice = 0;
 let stopLossActive = false;
 const TRAILING_PERCENT = 0.0005;  // 2%
 const STOP_LOSS_PERCENT = 0.1;  // 0.5%
-const MAINPAIR = 'BTCFDUSD'
+const MAINPAIR = 'BTCFDUSD';
+let last_order = '';
 
 const sellBTC = async (pair, price, qty) => {
   console.log(`Selling BTC at ${price}`);
   // Implement Binance sell order here
-  const newOrder = await placeOrder(pair, 'SELL', 'LIMIT', {
+  last_order = await placeOrder(pair, 'SELL', 'LIMIT', {
     price: price,
     quantity: qty,
     timeInForce: 'GTC'
@@ -157,7 +158,7 @@ const sellBTC = async (pair, price, qty) => {
 const buyBTC = async (pair, price, qty) => {
     console.log(`Buying BTC at ${price}`);
     // Implement Binance buy order here
-    const newOrder = await placeOrder(pair, 'BUY', 'LIMIT', {
+    last_order = await placeOrder(pair, 'BUY', 'LIMIT', {
         price: price,
         quantity: qty,
         timeInForce: 'GTC'
@@ -194,14 +195,19 @@ const botLoop = async ()=> {
         const currentPrice = await tickerPrice(MAINPAIR);
         const parsedPrice = Math.floor((currentPrice.price*100)/100);//Number(currentPrice.price).toFixed(2);
         console.dir(`Current price: ${parsedPrice}`);
-        //
         console.log(`High price: ${highestPrice}`);
         console.log(`Low price: ${lowestPrice}`);
         //
-        if(bot_runs == 0){
+        if(bot_runs == 0){//first init
             const checkBuySellSide = freeBtc*parsedPrice > freeUsdt;
             if(checkBuySellSide) btcHold = !btcHold;
+            last_order = await fetchMyOrders(MAINPAIR);
+            last_order = last_order[0];
+            //console.log('Last Order', last_order)
         }
+        //
+        console.log('Last order', last_order.price,  last_order.side);
+        //
         //
         let usdtToBtc = (freeUsdt/parsedPrice).toString();
         const removeAfterIndexUsdt= usdtToBtc.indexOf('.');
@@ -216,7 +222,7 @@ const botLoop = async ()=> {
         if (btcHold) {
             if (parsedPrice > highestPrice) {
               highestPrice = parsedPrice;
-            } else if (parsedPrice <= highestPrice * (1 - TRAILING_PERCENT)) {
+            } else if (last_order.side== 'BUY' && last_order.price > highestPrice * (1 - TRAILING_PERCENT) && parsedPrice <= highestPrice * (1 - TRAILING_PERCENT)) {
               await sellBTC(MAINPAIR, parsedPrice, btcQuantityFree);
               btcHold = false;
               lowestPrice = parsedPrice;
@@ -229,7 +235,7 @@ const botLoop = async ()=> {
 
             if (parsedPrice < lowestPrice) {
               lowestPrice = parsedPrice;
-            } else if (parsedPrice >= lowestPrice * (1 + TRAILING_PERCENT)) {
+            } else if (last_order.side== 'SELL' && last_order.price < lowestPrice * (1 - TRAILING_PERCENT) && parsedPrice >= lowestPrice * (1 + TRAILING_PERCENT)) {
               await buyBTC(MAINPAIR, parsedPrice, usdtToBtcQuantity);
               btcHold = true;
               highestPrice = parsedPrice;
