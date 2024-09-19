@@ -135,12 +135,12 @@ const klines = async (pair, interval) => {
 //module.exports = { fetchMyAccount, avgPrice, tickerPrice, fetchMyOrders, fetchMyTrades, placeOrder, getOrder, cancelOrder, cancelAndReplace, assetDetail, klines};
 let bot_runs = 0;
 let exit_loop = false;
-let btcHold = true;  // Starting with BTC
+let btcHold = false;  // Starting with BTC
 let highestPrice = 0;
 let lowestPrice = 0;
 let stopLossActive = false;
-const TRAILING_PERCENT = 0.002;  // 2%
-const STOP_LOSS_PERCENT = 0.0005;  // 0.5%
+const TRAILING_PERCENT = 0.0005;  // 2%
+const STOP_LOSS_PERCENT = 0.1;  // 0.5%
 const MAINPAIR = 'BTCFDUSD'
 
 const sellBTC = async (pair, price, qty) => {
@@ -184,6 +184,7 @@ const botLoop = async ()=> {
         const btcBalance = account.balances.find(asset => asset.asset == 'BTC');
         const freeBtc = Number(btcBalance.free);
         const lockedBtc = Number(btcBalance.locked);
+        //
         const usdtBalance = account.balances.find(asset => asset.asset == 'FDUSD');
         const freeUsdt = Number(usdtBalance.free);
         const lockedUsdt = Number(usdtBalance.locked);
@@ -197,20 +198,30 @@ const botLoop = async ()=> {
         console.log(`High price: ${highestPrice}`);
         console.log(`Low price: ${lowestPrice}`);
         //
+        if(bot_runs == 0){
+            const checkBuySellSide = freeBtc*parsedPrice > freeUsdt;
+            if(checkBuySellSide) btcHold = !btcHold;
+        }
+        //
         let usdtToBtc = (freeUsdt/parsedPrice).toString();
-        usdtToBtc = usdtToBtc;
-        const removeAfterIndex= usdtToBtc.indexOf('.');
-        const usdtToBtcQuantity= Number(usdtToBtc.substring(0, removeAfterIndex + 6));
+        const removeAfterIndexUsdt= usdtToBtc.indexOf('.');
+        const usdtToBtcQuantity= Number(usdtToBtc.substring(0, removeAfterIndexUsdt + 6));
+        // convert free btc to decimal ok number
+        let btcOriginal = freeBtc.toString()
+        const removeAfterIndexBtc= btcOriginal.indexOf('.');
+        const btcQuantityFree= Number(btcOriginal.substring(0, removeAfterIndexBtc + 6));
+        //
+        console.log('Hold BTC', btcHold)
         //
         if (btcHold) {
             if (parsedPrice > highestPrice) {
               highestPrice = parsedPrice;
             } else if (parsedPrice <= highestPrice * (1 - TRAILING_PERCENT)) {
-              await sellBTC(MAINPAIR, parsedPrice, freeBtc);
+              await sellBTC(MAINPAIR, parsedPrice, btcQuantityFree);
               btcHold = false;
               lowestPrice = parsedPrice;
             } else if (stopLossActive && parsedPrice <= highestPrice * (1 - STOP_LOSS_PERCENT)) {
-              await sellBTC(MAINPAIR, parsedPrice, freeBtc);
+              await sellBTC(MAINPAIR, parsedPrice, btcQuantityFree);
               btcHold = false;
               lowestPrice = parsedPrice;
             }
