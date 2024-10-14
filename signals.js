@@ -1,7 +1,8 @@
 require('dotenv').config(); // env config
 const { klines } = require('./scripts/binance-spot-2.js');
 const { Table  } = require('console-table-printer');
-const { getIndicators, buyApproval, sellApproval } = require('./utils/indicators.js');
+const { getIndicators } = require('./utils/indicators.js');
+const { analyzeCandles, buyApproval, sellApproval, shouldBuyOrSell} = require('./utils/trendCalcs.js');
 //https://github.com/yagop/node-telegram-bot-api
 const TelegramBot = require('node-telegram-bot-api');
 const token = process.env.TELEGRAM_BOT_TOKEN;
@@ -79,14 +80,17 @@ const botLoop =  async () =>  {
                 }
                 //
                 const indicators = await getIndicators(ohlcv);
+                const trend = analyzeCandles(ohlcv, 12);// To calculate the 24-hour trend with 2-hour candles, pass 12 as the analysis window
                 const shouldBuy = buyApproval(indicators);
                 const shouldSell = sellApproval(indicators);
-                //
+                const signal = shouldBuyOrSell(indicators); //remix of 2 above  
                 tableRowsArray.push({
                     pair,
                     shouldBuy,
                     shouldSell,
-                    indicators          
+                    indicators,
+                    trend,
+                    signal         
                 });
                 //
                 if (shouldBuy) {
@@ -135,6 +139,7 @@ const printTable = (dataArray)=>{
             { name: 'atr', title: 'atr', color: 'yellow'}, // with Title as separate Text,
             { name: 'priceTrend', title: 'Price trend'}, // with Title as separate Text,
             { name: 'volumeTrend', title: 'Vol trend'}, // with Title as separate Text,
+            { name: 'signal', title: 'signal'}
         ],
         colorMap: {
             custom_green: '\x1b[32m', // define customized color
@@ -152,9 +157,10 @@ const printTable = (dataArray)=>{
             adx: element.indicators?.CURRENT_ADX?.adx.toFixed(4),             
             ao: element.indicators?.CURRENT_AO,                        
             atr: element.indicators?.CURRENT_ATR.toFixed(4),                        
-            priceTrend: element.indicators?.trend.priceTrend,             
-            volumeTrend: element.indicators?.trend.volumeTrend,
-        },{ color: element.indicators?.trend.priceTrend == 'Bullish' ? 'green': element.indicators?.trend.priceTrend == 'Bearish'? 'red': '' }
+            priceTrend: element?.trend.priceTrend,             
+            volumeTrend: element?.trend.volumeTrend,
+            signal: element?.signal,
+        },{ color: element?.trend.priceTrend == 'Bullish' || element?.signal == 'Buy' ? 'green': element?.trend.priceTrend == 'Bearish' || element?.signal == 'Sell'? 'red': '' }
     ));
     p.printTable();
 }

@@ -1,6 +1,5 @@
 const { RSI, StochasticRSI, MACD, EMA, ADX, AwesomeOscillator, ATR } = require('technicalindicators'); //https://github.com/anandanand84/technicalindicators?tab=readme-ov-file#readme
 const { getLastElement } = require('./helpers.js');
-const { analyzeCandles } = require('./trendCalcs.js');
 
 const getIndicators = async (candleArray) =>{
     if(!Array.isArray(candleArray)) {console.log(candleArray); return;}
@@ -13,7 +12,7 @@ const getIndicators = async (candleArray) =>{
       values: filterCandlesClosing,
       period : 14
     });
-    const CURRENT_RSI = rsi[rsi.length -1];
+    const CURRENT_RSI = getLastElement(rsi);
     //StochasticRSI ok
     const stoch_rsi = StochasticRSI.calculate({
         values: filterCandlesClosing,
@@ -84,84 +83,12 @@ const getIndicators = async (candleArray) =>{
         CURRENT_AO,
         atr,
         CURRENT_ATR,
-        trend: analyzeCandles(candleArray, 12)// To calculate the 24-hour trend with 2-hour candles, pass 12 as the analysis window
     };
 }
 
-// 
-const buyApproval = (indicators) => {
-  const STOCH_BUY_LIMIT = 40;  // Adjusted to be less strict
-  const MACD_BUY_LIMIT = 0.1;   // Slightly positive to detect bullish momentum
-
-  const macdCrossUp = (indicators.macd && indicators.macd.length > 1)
-      ? indicators.macd[indicators.macd.length - 1].histogram > MACD_BUY_LIMIT && indicators.macd[indicators.macd.length - 2].histogram <= MACD_BUY_LIMIT
-      : false;
-
-  const stochRSIOK = (indicators.stoch_rsi && indicators.stoch_rsi.length > 0)
-      ? indicators.stoch_rsi[indicators.stoch_rsi.length - 1].k < STOCH_BUY_LIMIT
-      : false;
-
-  const macdAboveSignal = (indicators.macd && indicators.macd.length > 1)
-      ? indicators.macd[indicators.macd.length - 1].macd > indicators.macd[indicators.macd.length - 1].signal
-      : false;
-  /*
-    const rsiOK = (indicators.rsi && indicators.rsi.length > 0)
-      ? indicators.rsi[indicators.rsi.length - 1] < 30
-      : false;
-
-    const aoPositive = (indicators.ao && indicators.ao.length > 0)
-      ? indicators.ao[indicators.ao.length - 1] > 0
-      : false;
-
-    const adxStrong = (indicators.adx && indicators.adx.length > 0)
-        ? indicators.adx[indicators.adx.length - 1].adx > 20
-        : false;
-
-    const atrIncreasing = (indicators.atr && indicators.atr.length > 1)
-    ? indicators.atr[indicators.atr.length - 1] > indicators.atr[indicators.atr.length - 2]
-    : false;
-    
-    const emaCrossUp = (indicators.ema && indicators.ema.length > 1)
-    ? indicators.ema[indicators.ema.length - 1].shortEMA > indicators.ema[indicators.ema.length - 1].longEMA
-    : false;
-  */    
-
-  return macdCrossUp && stochRSIOK && macdAboveSignal;
-};
-
-
-const sellApproval = (indicators) => {
-  const STOCH_SELL_LIMIT = 70; // Stochastic RSI k > 70 for sell signal
-  const MACD_SELL_LIMIT = 0;   // MACD histogram < 0 for sell signal
-  const ADX_STRONG_THRESHOLD = 20; // Threshold for strong ADX
-
-  // Check for MACD histogram cross down
-  const macdCrossDown = (indicators.macd && indicators.macd.length > 1)
-      ? indicators.macd[indicators.macd.length - 1].histogram < MACD_SELL_LIMIT && indicators.macd[indicators.macd.length - 2].histogram >= MACD_SELL_LIMIT
-      : false;
-
-  // Check if the last stochastic RSI k value is above the sell limit
-  const stochRSIOverbought = (indicators.stoch_rsi && indicators.stoch_rsi.length > 0)
-      ? indicators.stoch_rsi[indicators.stoch_rsi.length - 1].k > STOCH_SELL_LIMIT
-      : false;
-
-  // Check if the Awesome Oscillator is negative
-  const aoNegative = (indicators.ao && indicators.ao.length > 0)
-      ? indicators.ao[indicators.ao.length - 1] < 0
-      : false;
-
-  // Check if the ADX is strong (above the defined threshold)
-  const adxStrong = (indicators.adx && indicators.adx.length > 0)
-      ? indicators.adx[indicators.adx.length - 1].adx > ADX_STRONG_THRESHOLD
-      : false;
-
-  // Return sell approval if all conditions are met
-  return macdCrossDown && stochRSIOverbought && aoNegative && adxStrong;
-};
-
 
   
-module.exports = { getIndicators, buyApproval, sellApproval };
+module.exports = { getIndicators };
 /* candle example in BINANCE
 [
   [
