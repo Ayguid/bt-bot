@@ -1,6 +1,6 @@
 //LIBS 
 //const EventEmitter = require('node:events');
-require('dotenv').config(); // env config
+//require('dotenv').config(); // env config
 // BINANCE CONECTOR
 const TESTNET = process.env.TESTNET;
 const { Spot } = require('@binance/connector'); //https://github.com/binance/binance-connector-node/
