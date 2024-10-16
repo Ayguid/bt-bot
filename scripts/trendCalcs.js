@@ -63,101 +63,122 @@ const analyzeCandles = (candles, analysisWindow = candles.length) => {
   };
 };
 
-const shouldBuyOrSell = (indicators) => {
-    // Thresholds
-    const RSI_BUY_LIMIT = 40; // Raised to be less strict
-    const RSI_SELL_LIMIT = 60; // Relaxed sell threshold
-    const STOCH_BUY_LIMIT = 40; // Raised from 30
-    const STOCH_SELL_LIMIT = 60; // Raised from 70
-    const MACD_BUY_LIMIT = 0;    // Unchanged
-    const MACD_SELL_LIMIT = 0;   // Unchanged
-    //const ADX_TREND_LIMIT = 20;  // ADX limit indicating trend strength
-    const ATR_THRESHOLD = 0.5; // Adjust this based on what is considered high volatility for your market
-    const CONDITIONS_NEEDED = 3; //2
-    
-    // Relaxed indicator conditions
-    const macdCrossUp = (indicators.macd && indicators.macd.length > 1) 
-        ? indicators.macd[indicators.macd.length - 1].histogram > MACD_BUY_LIMIT && 
-          indicators.macd[indicators.macd.length - 2].histogram <= MACD_BUY_LIMIT 
-        : false;
+const shouldBuyOrSell = (indicators, candles) => {
+  // Check if there are enough candles for analysis
+  if (candles.length < 2) {
+      return "Insufficient candle data for analysis";
+  }
 
-    const macdCrossDown = (indicators.macd && indicators.macd.length > 1) 
-        ? indicators.macd[indicators.macd.length - 1].histogram < MACD_SELL_LIMIT && 
-          indicators.macd[indicators.macd.length - 2].histogram >= MACD_SELL_LIMIT 
-        : false;
+  // Analyze the last candle
+  const lastCandle = candles[candles.length - 1];
+  const previousCandle = candles[candles.length - 2];
 
-    const stochRSIOverselled = (indicators.stoch_rsi && indicators.stoch_rsi.length > 0) 
-        ? indicators.stoch_rsi[indicators.stoch_rsi.length - 1].k < STOCH_BUY_LIMIT 
-        : false;
+  const lastClose = parseFloat(lastCandle[4]); // Last Close Price
+  const previousClose = parseFloat(previousCandle[4]); // Previous Close Price
+  const lastOpen = parseFloat(lastCandle[1]); // Last Open Price
+  const lastVolume = parseFloat(lastCandle[5]); // Last Volume
 
-    const stochRSIOverbought = (indicators.stoch_rsi && indicators.stoch_rsi.length > 0) 
-        ? indicators.stoch_rsi[indicators.stoch_rsi.length - 1].k > STOCH_SELL_LIMIT 
-        : false;
+  // Analyze price change and volume change
+  const priceChange = ((lastClose - previousClose) / previousClose) * 100;
+  const volumeChange = ((lastVolume - parseFloat(previousCandle[5])) / parseFloat(previousCandle[5])) * 100;
 
-    const rsiOK = (indicators.rsi && indicators.rsi.length > 0) 
-        ? indicators.rsi[indicators.rsi.length - 1] < RSI_BUY_LIMIT 
-        : false;
+  // Thresholds
+  const RSI_BUY_LIMIT = 40;
+  const RSI_SELL_LIMIT = 60;
+  const STOCH_BUY_LIMIT = 40;
+  const STOCH_SELL_LIMIT = 60;
+  const MACD_BUY_LIMIT = 0;
+  const MACD_SELL_LIMIT = 0;
+  const ATR_THRESHOLD = 0.5;
+  const CONDITIONS_NEEDED = 4;
 
-    const rsiOverbought = (indicators.rsi && indicators.rsi.length > 0) 
-        ? indicators.rsi[indicators.rsi.length - 1] > RSI_SELL_LIMIT 
-        : false;
+  // Relaxed indicator conditions
+  const macdCrossUp = (indicators.macd && indicators.macd.length > 1) 
+      ? indicators.macd[indicators.macd.length - 1].histogram > MACD_BUY_LIMIT && 
+        indicators.macd[indicators.macd.length - 2].histogram <= MACD_BUY_LIMIT 
+      : false;
 
-    const aoPositive = (indicators.ao && indicators.ao.length > 0) 
-        ? indicators.ao[indicators.ao.length - 1] > 0 
-        : false;
+  const macdCrossDown = (indicators.macd && indicators.macd.length > 1) 
+      ? indicators.macd[indicators.macd.length - 1].histogram < MACD_SELL_LIMIT && 
+        indicators.macd[indicators.macd.length - 2].histogram >= MACD_SELL_LIMIT 
+      : false;
 
-    const aoNegative = (indicators.ao && indicators.ao.length > 0) 
-        ? indicators.ao[indicators.ao.length - 1] < 0 
-        : false;
+  const stochRSIOverselled = (indicators.stoch_rsi && indicators.stoch_rsi.length > 0) 
+      ? indicators.stoch_rsi[indicators.stoch_rsi.length - 1].k < STOCH_BUY_LIMIT 
+      : false;
 
-    // const adxStrong = (indicators.adx && indicators.adx.length > 0) 
-    //     ? indicators.adx[indicators.adx.length - 1].adx > ADX_TREND_LIMIT 
-    //     : false;
+  const stochRSIOverbought = (indicators.stoch_rsi && indicators.stoch_rsi.length > 0) 
+      ? indicators.stoch_rsi[indicators.stoch_rsi.length - 1].k > STOCH_SELL_LIMIT 
+      : false;
 
-    // const emaCrossUp = (indicators.ema && indicators.ema.length > 1) 
-    //     ? indicators.ema[indicators.ema.length - 1].shortEMA > indicators.ema[indicators.ema.length - 1].longEMA 
-    //     : false;
+  const rsiOK = (indicators.rsi && indicators.rsi.length > 0) 
+      ? indicators.rsi[indicators.rsi.length - 1] < RSI_BUY_LIMIT 
+      : false;
 
-    // const emaCrossDown = (indicators.ema && indicators.ema.length > 1) 
-    //     ? indicators.ema[indicators.ema.length - 1].shortEMA < indicators.ema[indicators.ema.length - 1].longEMA 
-    //     : false;
+  const rsiOverbought = (indicators.rsi && indicators.rsi.length > 0) 
+      ? indicators.rsi[indicators.rsi.length - 1] > RSI_SELL_LIMIT 
+      : false;
 
-    const atrIncreasing = (indicators.atr && indicators.atr.length > 1) 
-        ? indicators.atr[indicators.atr.length - 1] > indicators.atr[indicators.atr.length - 2] 
-        : false; //buy when volatility is high
-    // Volatility threshold (ATR): If ATR has increased significantly, we might use it as a confirmation of buy/sell.
-    
-    const highVolatility = (indicators.atr && indicators.atr.length > 0)
+  const aoPositive = (indicators.ao && indicators.ao.length > 0) 
+      ? indicators.ao[indicators.ao.length - 1] > 0 
+      : false;
+
+  const aoNegative = (indicators.ao && indicators.ao.length > 0) 
+      ? indicators.ao[indicators.ao.length - 1] < 0 
+      : false;
+
+  const atrIncreasing = (indicators.atr && indicators.atr.length > 1) 
+      ? indicators.atr[indicators.atr.length - 1] > indicators.atr[indicators.atr.length - 2] 
+      : false; 
+
+  const highVolatility = (indicators.atr && indicators.atr.length > 0)
       ? indicators.atr[indicators.atr.length - 1] > ATR_THRESHOLD
       : false;
 
-    // Scoring system for buy or sell signals
-    let buyScore = 0;
-    let sellScore = 0;
+  // Scoring system for buy or sell signals
+  let buyScore = 0;
+  let sellScore = 0;
 
-    // Assign weights to each indicator
-    if (macdCrossUp) buyScore += 2;  // Stronger signal
-    if (stochRSIOverselled) buyScore += 1;   // Weaker signal
-    if (rsiOK) buyScore += 1;
-    if (aoPositive) buyScore += 1;
-    if (atrIncreasing) buyScore += 1;
-    //if (adxStrong && emaCrossUp) buyScore += 2;  // Stronger signal
+  // Price trend enhancement: Check if the last close is higher than the last open (bullish candle)
+  const isBullishCandle = lastClose > lastOpen;
 
-    // Sell conditions
-    if (macdCrossDown) sellScore++;
-    if (stochRSIOverbought) sellScore++;
-    if (rsiOverbought) sellScore++;
-    if (aoNegative) sellScore++;
-    //if (adxStrong && emaCrossDown) sellScore++;
+  // Volume trend analysis
+  const isVolumeIncreasing = volumeChange > 5; // 5% increase as an example
+  const isVolumeDecreasing = volumeChange < -5; // 5% decrease as an example
 
-    // Flexibility: Only 2 or more conditions need to be met for a buy or sell signal
-    if (buyScore >= CONDITIONS_NEEDED && highVolatility) {
-        return "Buy";
-    } else if (sellScore >= CONDITIONS_NEEDED && highVolatility) {
-        return "Sell";
-    } else {
-        return "Hold";
-    }
+  // Assign weights to each indicator
+  if (macdCrossUp) buyScore += 2;  // Stronger signal
+  if (stochRSIOverselled) buyScore += 1;   // Weaker signal
+  if (rsiOK) buyScore += 1;
+  if (aoPositive) buyScore += 1;
+  if (atrIncreasing) buyScore += 1;
+
+  // Incorporate candle insights into buy score
+  if (isBullishCandle) buyScore += 1;
+  if (isVolumeIncreasing) buyScore += 1;
+
+  // Incorporate price change into buy/sell scores
+  if (priceChange > 1) { // If the price has increased by more than 1%
+      buyScore += 1; // Favorable for buying
+  } else if (priceChange < -1) { // If the price has decreased by more than 1%
+      sellScore += 1; // Favorable for selling
+  }
+
+  // Sell conditions
+  if (macdCrossDown) sellScore++;
+  if (stochRSIOverbought) sellScore++;
+  if (rsiOverbought) sellScore++;
+  if (aoNegative) sellScore++;
+  if (isVolumeDecreasing) sellScore++; // Penalize sell score if volume decreases
+
+  // Flexibility: Only 'CONDITIONS_NEEDED' or more conditions need to be met for a buy or sell signal
+  if (buyScore >= CONDITIONS_NEEDED && highVolatility) {
+      return "Buy";
+  } else if (sellScore >= CONDITIONS_NEEDED && highVolatility) {
+      return "Sell";
+  } else {
+      return "Hold";
+  }
 };
 
 
