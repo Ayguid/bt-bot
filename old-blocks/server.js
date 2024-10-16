@@ -4,8 +4,8 @@ const ip = require('ip');
 const ipAddress = ip.address();
 const port = 5000;
 
-const { Bot } = require('./scripts/bot-engine.js');
-const { saveData } = require('./utils/fileManager.js');
+const { Bot } = require('../scripts/bot-engine.js');
+const { saveData } = require('../utils/fileManager.js');
 
 const server = app.listen(port, function() {
     console.log('server running on port', port);

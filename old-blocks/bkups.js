@@ -1,9 +1,9 @@
 require('dotenv').config(); // env config
-const { klines } = require('./scripts/binance-spot.js');
+const { klines } = require('../scripts/binance-spot-2.js');
 const { Table } = require('console-table-printer');
-const { getIndicators } = require('./scripts/indicators.js');
-const { analyzeCandles, shouldBuyOrSell } = require('./scripts/trendCalcs.js');
-const { saveData } = require('./utils/fileManager.js');
+const { getIndicators } = require('../scripts/indicators.js');
+const { analyzeCandles, shouldBuyOrSell } = require('../scripts/trendCalcs.js');
+const { saveData } = require('../utils/fileManager.js');
 
 const TelegramBot = require('node-telegram-bot-api');
 const token = process.env.TELEGRAM_BOT_TOKEN;
@@ -75,7 +75,15 @@ const processPair = async (pair) => {
             date: Intl.DateTimeFormat("es", { dateStyle: 'short', timeStyle: 'short' }).format(new Date())
         };
         PAIRS_DATA[pair] = result;
-
+        // if (signal == 'Buy' ) {
+        //     console.log('Buy Signal Triggered!', pair);
+        //     if(BUY_ALERT_CONFIG) tBot.sendMessage(GROUP_CHAT_ID, Should buy https://www.binance.com/en/trade/${pair}?type=spot, { parse_mode: "HTML", disable_web_page_preview: true });// this is why we mantian the pair with the underscore _
+        // } else if (signal == 'Sell') {
+        //     console.log('Sell Signal Triggered!', pair);
+        //     if(SELL_ALERT_CONFIG) tBot.sendMessage(GROUP_CHAT_ID, Should sell https://www.binance.com/en/trade/${pair}?type=spot, { parse_mode: "HTML", disable_web_page_preview: true });// this is why we mantian the pair with the underscore _
+        // } else {
+        //     //console.log('No trade signal.');
+        // } 
         return result;
     } catch (error) {
         console.error(`Error processing ${pair}:`, error);
@@ -94,6 +102,11 @@ const botLoop = async () => {
 
         if (SAVE_DATA) saveData(PAIRS_DATA, 'final_data.json');
         PAIRS_LOOP_INDEX = (PAIRS_LOOP_INDEX + 1) % PAIRS.length;
+        // PAIRS_LOOP_INDEX++;
+        // if (PAIRS_LOOP_INDEX >= PAIRS.length) {
+        //     PAIRS_LOOP_INDEX = 0; 
+        //     console.log('\x1b[33m%s\x1b[0m', '<<------------------------>>'); // Log after all pairs have been processed
+        // } 
         await wait(DELAY);
     }
 };
