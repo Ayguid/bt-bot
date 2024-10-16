@@ -1,5 +1,5 @@
 const { RSI, StochasticRSI, MACD, EMA, ADX, AwesomeOscillator, ATR } = require('technicalindicators'); //https://github.com/anandanand84/technicalindicators?tab=readme-ov-file#readme
-const { getLastElement } = require('./helpers.js');
+const { getLastElement } = require('../utils/helpers.js');
 
 const getIndicators = async (candleArray) =>{
     if(!Array.isArray(candleArray)) {console.log(candleArray); return;}
@@ -32,12 +32,7 @@ const getIndicators = async (candleArray) =>{
         SimpleMASignal: false
     });
     const CURRENT_MACD = getLastElement(macd);//macd[macd.length -1];
-    //EMA
-    const ema = EMA.calculate({
-      period : 8,
-      values : filterCandlesClosing
-    });
-    const CURRENT_EMA = ema[ema.length -1];  
+ 
     //ADX ??
     const adx =  ADX.calculate({
         close: filterCandlesClosing,
@@ -68,13 +63,19 @@ const getIndicators = async (candleArray) =>{
     );
     const CURRENT_ATR = getLastElement(atr);//atr[atr.length -1];
     //
+    //EMA
+    const ema = EMA.calculate({
+      period : 8,
+      values : filterCandlesClosing
+    });
+    const CURRENT_EMA = ema[ema.length -1]; 
+
     return {
         rsi,
         CURRENT_RSI,
         stoch_rsi,
         CURRENT_STOCH_RSI,
         macd,
-        ema,
         CURRENT_EMA,
         CURRENT_MACD,
         adx,
@@ -83,6 +84,7 @@ const getIndicators = async (candleArray) =>{
         CURRENT_AO,
         atr,
         CURRENT_ATR,
+        ema,
     };
 }
 
