@@ -1,33 +1,42 @@
-//es6 syntax, later convert to it
-//import * as fs from 'fs';
 const fs = require('node:fs');
+const path = require('node:path');
 
-const ROOT_DB_DIR = './db';
+const config = {
+    ROOT_DB_DIR: './db',
+    DEBUG: false,
+};
 
-const DEBUG = false;
-//
+const logError = (message, err) => {
+    console.error(`${message}:`, err);
+};
+
 const saveData = async (dataToSave, fileName) => {
-    const INIT_DATE = new Date(); //current date folder
-    const dateDirectory = ROOT_DB_DIR + '/' + INIT_DATE.toISOString().split('T')[0];
-    //check if folder exists
-    if (!fs.existsSync(dateDirectory)){
-        await fs.mkdirSync(dateDirectory);
-        if (DEBUG)console.log('Folder created successfully');
-    } 
-    else {
-        if (DEBUG) console.log('Folder exists for ' + INIT_DATE);
-    }
-    //check if file exists
-    const contents = JSON.stringify(dataToSave,null, 4);
-    
-    return await fs.writeFile( dateDirectory +'/'+ fileName, contents, err => {
-        if (err) {
-            console.log(err);
-        } 
-        else {
-           if (DEBUG) console.log('file written successfully');
+    const initDate = new Date(); // current date folder
+    const dateDirectory = path.join(config.ROOT_DB_DIR, initDate.toISOString().split('T')[0]);
+
+    // Check if folder exists and create it if it doesn't
+    if (!fs.existsSync(dateDirectory)) {
+        try {
+            await fs.promises.mkdir(dateDirectory, { recursive: true });
+            if (config.DEBUG) console.log('Folder created successfully:', dateDirectory);
+        } catch (err) {
+            logError('Error creating directory', err);
+            return; // Exit if directory creation fails
         }
-    });  
-}
+    } else {
+        if (config.DEBUG) console.log('Folder exists for', initDate);
+    }
+
+    // Prepare the contents for writing
+    const contents = JSON.stringify(dataToSave, null, 4);
+    
+    // Write the file
+    try {
+        await fs.promises.writeFile(path.join(dateDirectory, fileName), contents);
+        if (config.DEBUG) console.log('File written successfully:', fileName);
+    } catch (err) {
+        logError('Error writing file', err);
+    }
+};
 
 module.exports = { saveData };

@@ -88,8 +88,6 @@ const getIndicators = (candleArray) =>{
     };
 }
 
-
-  
 module.exports = { getIndicators };
 /* candle example in BINANCE
 [
