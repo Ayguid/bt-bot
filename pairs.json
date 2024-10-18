@@ -26,6 +26,7 @@
     "DOGS_USDT"
   ],
   "tradeablePairs": [
-    "BTC_USDT"
+    "BTC_USDT",
+    "ETH_USDT"
   ]
 }
