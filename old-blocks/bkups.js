@@ -951,4 +951,21 @@ const analyzeCandles = (candles, analysisWindow = candles.length) => {
   module.exports = { analyzeCandles, shouldBuyOrSell };
   
   
+  /*
   
+    async sendAlert(pair, signal) {
+        const normalizedSignal = signal.toLowerCase();
+        if (!['buy', 'sell'].includes(normalizedSignal)) return;
+    
+        const currentTime = Date.now();
+        const lastAlertTime = this.lastAlertTimes[normalizedSignal]?.[pair] || 0;
+    
+        if (currentTime - lastAlertTime >= this.config.alertCooldown) {
+            await this.tBot.sendMessage(process.env.TELEGRAM_GROUPCHAT_ID, `${signal} signal for ${pair}`);
+            this.lastAlertTimes[normalizedSignal] = { 
+                ...this.lastAlertTimes[normalizedSignal], 
+                [pair]: currentTime 
+            };
+        }
+    }
+  */

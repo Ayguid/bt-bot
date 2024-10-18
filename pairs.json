@@ -24,5 +24,8 @@
     "BURGER_USDT",
     "BLZ_USDT",
     "DOGS_USDT"
+  ],
+  "tradeablePairs": [
+    "BTC_USDT"
   ]
 }
