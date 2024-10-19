@@ -3,7 +3,6 @@
     "BTC_USDT",
     "ETH_USDT",
     "FET_USDT",
-    "BNB_USDT",
     "FTM_USDT",
     "FIO_USDT",
     "ICP_USDT",
@@ -22,11 +21,11 @@
     "1INCH_USDT",
     "ARKM_USDT",
     "BURGER_USDT",
-    "BLZ_USDT",
     "DOGS_USDT"
   ],
   "tradeablePairs": [
     "BTC_USDT",
-    "ETH_USDT"
+    "ETH_USDT",
+    "FET_USDT"
   ]
 }

@@ -31,10 +31,11 @@ const makeApiCall = async (method, ...args) => {
 };
 
 // Refactored API methods with proper binding
+const serverTime = () => makeApiCall(client.time);
 const fetchMyAccount = () => makeApiCall(client.account);
 const avgPrice = (pair) => makeApiCall(client.avgPrice, pair);
 const tickerPrice = (pair) => makeApiCall(client.tickerPrice, pair);
-const fetchMyOrders = (pair) => makeApiCall(client.allOrders, pair, { limit: 30 });
+const fetchMyOrders = (pair) => makeApiCall(client.allOrders, pair, { limit: 30, timestamp: 123123 });
 const fetchMyTrades = (pair) => makeApiCall(client.myTrades, pair);
 const getOrder = (pair, id) => makeApiCall(client.getOrder, pair, { orderId: id });
 const placeOrder = (pair, side, type, params) => makeApiCall(client.newOrder, pair, side, type, params);
@@ -45,6 +46,6 @@ const assetDetail = (pair) => makeApiCall(client.assetDetail, { asset: pair });
 const klines = (pair, interval) => makeApiCall(client.klines, pair, interval, { limit: 120 });
 
 module.exports = {
-    fetchMyAccount, avgPrice, tickerPrice, fetchMyOrders, fetchMyTrades,
+    serverTime, fetchMyAccount, avgPrice, tickerPrice, fetchMyOrders, fetchMyTrades,
     placeOrder, getOrder, cancelOrder, cancelAndReplace, assetDetail, klines
 };

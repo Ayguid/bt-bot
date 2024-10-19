@@ -12,7 +12,7 @@ const getIndicators = (candleArray) =>{
       values: filterCandlesClosing,
       period : 14
     });
-    const CURRENT_RSI = getLastElement(rsi);
+    const current_rsi = getLastElement(rsi);
     //StochasticRSI ok
     const stoch_rsi = StochasticRSI.calculate({
         values: filterCandlesClosing,
@@ -21,7 +21,7 @@ const getIndicators = (candleArray) =>{
         kPeriod: 3,
         dPeriod: 3,
     });
-    const CURRENT_STOCH_RSI = getLastElement(stoch_rsi); //stoch_rsi[stoch_rsi.length -1]
+    const current_stoch_rsi = getLastElement(stoch_rsi); //stoch_rsi[stoch_rsi.length -1]
     //MACD ok
     const macd = MACD.calculate({
         values: filterCandlesClosing,
@@ -31,7 +31,7 @@ const getIndicators = (candleArray) =>{
         SimpleMAOscillator: false,
         SimpleMASignal: false
     });
-    const CURRENT_MACD = getLastElement(macd);//macd[macd.length -1];
+    const current_macd = getLastElement(macd);//macd[macd.length -1];
  
     //ADX ??
     const adx =  ADX.calculate({
@@ -40,7 +40,7 @@ const getIndicators = (candleArray) =>{
         low: filterCandlesLow,
         period: 14
     });
-    const CURRENT_ADX = getLastElement(adx);//adx[adx.length -1];
+    const current_adx = getLastElement(adx);//adx[adx.length -1];
     //Awesome oscilator (AO) ??
     const ao = AwesomeOscillator.calculate({
         high: filterCandlesHigh,
@@ -51,7 +51,7 @@ const getIndicators = (candleArray) =>{
         slowPeriod : 34,
         format : (a)=>parseFloat(a.toFixed(2))
     });
-    const CURRENT_AO = getLastElement(ao);//ao[ao.length -1];
+    const current_ao = getLastElement(ao);//ao[ao.length -1];
     //ATR
     const atr = ATR.calculate(
       {
@@ -61,30 +61,30 @@ const getIndicators = (candleArray) =>{
         period : 14
       }
     );
-    const CURRENT_ATR = getLastElement(atr);//atr[atr.length -1];
+    const current_atr = getLastElement(atr);//atr[atr.length -1];
     //
     //EMA
     const ema = EMA.calculate({
       period : 8,
       values : filterCandlesClosing
     });
-    const CURRENT_EMA = ema[ema.length -1]; 
+    const current_ema = ema[ema.length -1]; 
 
     return {
         rsi,
-        CURRENT_RSI,
+        current_rsi,
         stoch_rsi,
-        CURRENT_STOCH_RSI,
+        current_stoch_rsi,
         macd,
-        CURRENT_EMA,
-        CURRENT_MACD,
+        current_macd,
         adx,
-        CURRENT_ADX,
+        current_adx,
         ao,
-        CURRENT_AO,
+        current_ao,
         atr,
-        CURRENT_ATR,
+        current_atr,
         ema,
+        current_ema,
     };
 }
 
