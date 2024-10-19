@@ -106,15 +106,15 @@ class TradingBot {
             return;
         }
         console.log('\x1b[32mAttempting to trade\x1b[0m', { pair, price: currentPrice.price, signal });
-
+        //
         const approveBuyIndicators = signal === TradingBot.BUY && 
             [TradingBot.BULLISH, TradingBot.SIDEWAYS].includes(trend.priceTrend);
         const approveSellIndicators = signal === TradingBot.SELL && 
             trend.priceTrend === TradingBot.BULLISH;
-
+        //
         if (!Array.isArray(orders) || orders.length === 0) {
             console.log(`No orders for ${pair}, considering placing one based on current indicators.`);
-            await this.considerNewOrder(pair, approveBuyIndicators, approveSellIndicators);
+            await this.considerNewOrder(pair, currentPrice, approveBuyIndicators, approveSellIndicators);
         } else {
             const latestOrder = orders.reduce((latest, order) => 
                 new Date(order.time) > new Date(latest.time) ? order : latest
@@ -124,18 +124,18 @@ class TradingBot {
 
             switch (latestOrder.status) {
                 case TradingBot.FILLED:
-                    await this.handleFilledOrder(pair, latestOrder, approveBuyIndicators, approveSellIndicators);
+                    await this.handleFilledOrder(pair, currentPrice, latestOrder, approveBuyIndicators, approveSellIndicators);
                     break;
                 case TradingBot.PARTIALLY_FILLED:
-                    await this.handlePartiallyFilledOrder(pair, latestOrder, approveBuyIndicators, approveSellIndicators);
+                    await this.handlePartiallyFilledOrder(pair, currentPrice, latestOrder, approveBuyIndicators, approveSellIndicators);
                     break;
                 case TradingBot.NEW:
                     console.log('Order pending. Monitoring for completion.');
-                    await this.monitorPendingOrder(pair, latestOrder);
+                    await this.monitorPendingOrder(pair, currentPrice, latestOrder);
                     break;
                 case TradingBot.CANCELED:
                     console.log('Last order was canceled. Considering new order based on current conditions.');
-                    await this.considerNewOrder(pair, approveBuyIndicators, approveSellIndicators);
+                    await this.considerNewOrder(pair, currentPrice, approveBuyIndicators, approveSellIndicators);
                     break;
                 default:
                     console.log(`Unhandled order status: ${latestOrder.status}. Please review.`);
@@ -143,7 +143,7 @@ class TradingBot {
         }
     }
 
-    async handleFilledOrder(pair, order, approveBuyIndicators, approveSellIndicators) {
+    async handleFilledOrder(pair, currentPrice, order, approveBuyIndicators, approveSellIndicators) {
         if (order.side === TradingBot.SELL && approveBuyIndicators) {
             console.log('Last sell order filled. Conditions favorable for buying.');
             await this.placeBuyOrder(pair);
@@ -155,7 +155,7 @@ class TradingBot {
         }
     }
 
-    async handlePartiallyFilledOrder(pair, order, approveBuyIndicators, approveSellIndicators) {
+    async handlePartiallyFilledOrder(pair, currentPrice, order, approveBuyIndicators, approveSellIndicators) {
         console.log(`Order for ${pair} is partially filled. Filled amount: ${order.executedQty}`);
         
         const remainingQty = order.quantity - order.executedQty;
@@ -180,7 +180,7 @@ class TradingBot {
         // Implement any additional async logic for partially filled orders
     }
 
-    async considerNewOrder(pair, approveBuyIndicators, approveSellIndicators) {
+    async considerNewOrder(pair, currentPrice, approveBuyIndicators, approveSellIndicators) {
         if (approveBuyIndicators) {
             console.log('Conditions favorable for placing a buy order');
             await this.placeBuyOrder(pair);
@@ -192,7 +192,7 @@ class TradingBot {
         }
     }
 
-    async placeBuyOrder(pair) {
+    async placeBuyOrder(pair, currentPrice) {
         console.log(`Placing buy order for ${pair}`);
         // Implement async logic to place a buy order
         // For example:
@@ -200,7 +200,7 @@ class TradingBot {
         // this.currentTrades.set(pair, { side: TradingBot.BUY, status: TradingBot.NEW, orderId: order.id });
     }
 
-    async placeSellOrder(pair) {
+    async placeSellOrder(pair, currentPrice) {
         console.log(`Placing sell order for ${pair}`);
         // Implement async logic to place a sell order
         // For example:
@@ -208,7 +208,7 @@ class TradingBot {
         // this.currentTrades.set(pair, { side: TradingBot.SELL, status: TradingBot.NEW, orderId: order.id });
     }
 
-    async monitorPendingOrder(pair, order) {
+    async monitorPendingOrder(pair, currentPrice, order) {
         console.log(`Monitoring pending ${order.side} order for ${pair}`);
         // Implement async logic to monitor pending order
         // For example:
@@ -219,7 +219,7 @@ class TradingBot {
     }
 
     // Additional method for cancelling orders
-    async cancelRemainingOrder(pair, order) {
+    async cancelRemainingOrder(pair, currentPrice, order) {
         console.log(`Cancelling remaining order for ${pair}`);
         // Implement async logic to cancel the remaining order
         // For example:
