@@ -26,4 +26,8 @@ const calculateProfit = (currentPrice, orderPrice) => {
     return profit;
 }
 
-module.exports = { percent , roundDown, minusPercent, plusPercent, timePassed, calculateProfit };
+const getLastElement = (array) => {
+    return array.slice(-1)[0];//array[array.length -1]; but non destructive
+}
+
+module.exports = { percent , roundDown, minusPercent, plusPercent, timePassed, calculateProfit, getLastElement };

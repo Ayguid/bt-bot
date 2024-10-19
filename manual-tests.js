@@ -1,3 +1,4 @@
+require('dotenv').config(); // Environment variables
 const { fetchMyAccount, avgPrice, tickerPrice, fetchMyOrders, fetchMyTrades, placeOrder, getOrder, cancelOrder, assetDetail, klines} = require('./scripts/binance-spot-2.js');
 
 
