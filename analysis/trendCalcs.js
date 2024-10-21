@@ -159,7 +159,7 @@ const shouldBuyOrSell = (indicators, candles) => {
   if (isVolumeIncreasing) buyScore += 1;
 
   // Incorporate price change into buy/sell scores
-  if (priceChange > 1) { // If the price has increased by more than 1%
+  if (priceChange > 1 ) { // If the price has increased by more than 1% and is less && priceChange < 3 than 3%
       buyScore += 1; // Favorable for buying
   } else if (priceChange < -1) { // If the price has decreased by more than 1%
       sellScore += 1; // Favorable for selling

@@ -40,12 +40,12 @@ const fetchMyTrades = (pair) => makeApiCall(client.myTrades, pair);
 const getOrder = (pair, id) => makeApiCall(client.getOrder, pair, { orderId: id });
 const placeOrder = (pair, side, type, params) => makeApiCall(client.newOrder, pair, side, type, params);
 const cancelOrder = (pair, id) => makeApiCall(client.cancelOrder, pair, { orderId: id });
-const cancelAndReplace = (pair, side, type, params) => 
-    makeApiCall(client.cancelAndReplace, pair, side, type, 'ALLOW_FAILURE', params);
+const cancelAndReplace = (pair, side, type, params) => makeApiCall(client.cancelAndReplace, pair, side, type, 'ALLOW_FAILURE', params);
 const assetDetail = (pair) => makeApiCall(client.assetDetail, { asset: pair });
+const userAsset = (pair) => makeApiCall(client.userAsset, { asset: pair });
 const klines = (pair, interval) => makeApiCall(client.klines, pair, interval, { limit: 120 });
 
 module.exports = {
     serverTime, fetchMyAccount, avgPrice, tickerPrice, fetchMyOrders, fetchMyTrades,
-    placeOrder, getOrder, cancelOrder, cancelAndReplace, assetDetail, klines
+    placeOrder, getOrder, cancelOrder, cancelAndReplace, assetDetail, userAsset, klines
 };
