@@ -5,7 +5,7 @@ const { execSync } = require('child_process'); // To run system commands for tim
 // Local project modules
 const { serverTime, klines, fetchMyOrders, tickerPrice, userAsset, fetchMyAccount } = require('../utils/binance-spot.js');
 const { getIndicators } = require('../analysis/indicators.js');
-const { analyzeCandles, shouldBuyOrSell } = require('../analysis/trendCalcs.js');
+const { shouldBuyOrSell } = require('../analysis/trendCalcs.js');
 const { saveData } = require('../utils/fileManager.js');
 const RateLimitedQueue = require('../classes/RateLimitedQueue.js');
 const TablePrinter = require('../utils/tablePrinter.js');
@@ -22,11 +22,6 @@ class TradingBot {
     static PARTIALLY_FILLED = 'PARTIALLY_FILLED';
     static CANCELED = 'CANCELED';
     static NEW = 'NEW';
-    //TRENDS
-    static BULLISH = 'Bullish';
-    static SIDEWAYS = 'Sideways';
-    //Margins
-    static MGN_PCNT = 1; //1%
 
     constructor() {
         this.config = config; // Use the imported config
@@ -66,9 +61,9 @@ class TradingBot {
         return action ? await action() : 'Unknown command.';
     }
 
-    sendGroupChatAlert(pair, signal) {
+    sendGroupChatAlert(pair, analysis) {
         // Delegate alert sending to the Telegram bot handler
-        this.telegramBotHandler.sendGroupChatAlert(pair, signal);
+        this.telegramBotHandler.sendGroupChatAlert(pair, analysis);
     }
 
     startBot() {
@@ -102,16 +97,15 @@ class TradingBot {
         });
     }
 
-    async trade(pair, balances, currentPrice, orders, trend, signal) {
-        if (!pair || !Array.isArray(balances) || !currentPrice || !orders || !trend || !signal ) {
+    async trade(pair, currentPrice, orders, analysis) {
+        if (!pair || !currentPrice || !orders || !analysis ) {
             console.error('Missing data/params to trade');
             return;
         }
-        //console.log(trend);
-        console.log('\x1b[32mAttempting to trade\x1b[0m', { pair, price: currentPrice.price, signal });
+        console.log('\x1b[32mAttempting to trade\x1b[0m', { pair, price: currentPrice.price});
         //
-        const buyIsApproved = signal === TradingBot.BUY && [TradingBot.BULLISH, TradingBot.SIDEWAYS].includes(trend.priceTrend);
-        const sellIsApproved = signal === TradingBot.SELL && trend.priceTrend === TradingBot.BULLISH;
+        const buyIsApproved = analysis.signal == TradingBot.BUY
+        const sellIsApproved = analysis.signal == TradingBot.SELL
         //
         if (!Array.isArray(orders) || orders.length === 0) {
             console.log(`No orders for ${pair}, considering placing one based on current indicators.`);
@@ -148,7 +142,7 @@ class TradingBot {
         if (order.side === TradingBot.SELL && buyIsApproved) {
             console.log('Last sell order filled. Conditions favorable for buying.');
             await this.placeBuyOrder(pair);
-        } else if (order.side === 'TradingBot.BUY' && sellIsApproved) {
+        } else if (order.side === TradingBot.BUY && sellIsApproved) {
             console.log('Last buy order filled. Conditions favorable for selling.');
             await this.placeSellOrder(pair);
         } else {
@@ -195,6 +189,18 @@ class TradingBot {
 
     async placeBuyOrder(pair, currentPrice) {
         console.log(`Placing buy order for ${pair}`);
+        //
+        const balances = await this.getBalances(pair);
+        const assetBalance = balances[0];
+        const stableBalance = balances[1];
+        if(stableBalance.free < this.config.orderQty) {
+            console.warn('Not enough balance to place order.');
+            return;
+        }
+        console.log(assetBalance, stableBalance);
+        //const qty = currentPrice / TradingBot.ORDER_QTY;
+        //const order = await this.makeQueuedReq(placeOrder(pair, 'BUY', 'LIMIT', {price: currentPrice, quantity: qty, timeInForce: 'GTC'}));
+        //return order;
         // Implement async logic to place a buy order
         // For example:
         // const order = await this.api.placeBuyOrder(pair, quantity, price);
@@ -231,14 +237,14 @@ class TradingBot {
     async processPair(pair, isTradeable = false) {
         console.log('\x1b[33m%s\x1b[0m',`${pair}------------------`)
         const joinedPair = pair.replace('_', '');//turns ETH_USDT into ETHUSDT
-        //
-        const [ohlcv, orders, currentPrice, balances] = await Promise.all([ //parallel method
+        // Get pair kandles, (orders and price) if isTradeable
+        const [ohlcv, orders, currentPrice] = await Promise.all([ //parallel method //we fetch balances only inside buy or sell methods, to reduce api calls
             this.makeQueuedReq(klines, joinedPair, this.config.klinesInterval),
             isTradeable ? this.makeQueuedReq(fetchMyOrders, joinedPair) : false,
             isTradeable ? this.makeQueuedReq(tickerPrice, joinedPair) : false,
-            isTradeable ? this.getBalances(pair) : false,
+            //isTradeable ? this.getBalances(pair) : false,
         ]);
-        //if no/error candles exit
+        //if error in candles exit
         if (ohlcv.error) {
             console.error('Failed to fetch OHLCV data');
             if (this.config.debug) console.error(`Error or invalid data:`, ohlcv);
@@ -258,31 +264,23 @@ class TradingBot {
                 console.warn(`Error details:`, currentPrice);
             }
         }
-        //
-        if(balances.error){
-            console.warn('Failed to fetch balances');
-            if (this.config.debug) {
-                console.warn(`Error details:`, balances);
-            }
-        }
-        //analysis
+        // Analysis
         const indicators = getIndicators(ohlcv);
-        const trend = analyzeCandles(ohlcv, 12);
-        const signal = shouldBuyOrSell(indicators, ohlcv);
-        this.sendGroupChatAlert(pair, signal);// the method itself checks for time passed between alerts and signal type
+        const analysis = shouldBuyOrSell(indicators, ohlcv, this.config.analysisWindow); //if 2hr timeframe for candles changes, change the 12 inside analysisWindow to = 24/timeframe
+        //
+        this.sendGroupChatAlert(pair, analysis);// the method itself checks for time passed between alerts and analysis type
         //trade
-        if(isTradeable && !orders.error && !currentPrice.error) await this.trade(joinedPair, balances, currentPrice, orders, trend, signal);
+        if(isTradeable && !orders.error && !currentPrice.error) await this.trade(joinedPair, currentPrice, orders, analysis);
         //return result
         return {
             pair,
             indicators,
-            trend,
-            signal,
+            analysis,
             date: new Date().toLocaleString('es', { dateStyle: 'short', timeStyle: 'short' })
         };  
     }
 
-    async getBalances(pair){ // userAsset wont work on testnet, this is a workaround taht uses the whole eallet balance in testnet
+    async getBalances(pair){ // userAsset wont work on testnet, this is a workaround that uses the whole wallet balance in testnet
         const assetKey = pair.split("_")[0];//ETH_
         const stableKey = pair.split("_")[1];//_USDT
         const TESTNET = process.env.TESTNET === 'true';

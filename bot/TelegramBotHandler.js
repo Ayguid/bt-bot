@@ -28,12 +28,12 @@ class TelegramBotHandler {
         await this.tBot.sendMessage(process.env.TELEGRAM_MY_ID, response);
     }
 
-    async sendGroupChatAlert(pair, signal) {
+    async sendGroupChatAlert(pair, analysis) {
         if (!this.config.telegramBotEnabled) {
             console.log(`Telegram bot is disabled, not sending ${signal} alert for ${pair}.`);
             return; // Exit early if the Telegram bot is disabled
         }
-        const normalizedSignal = signal.toLowerCase();
+        const normalizedSignal = analysis.signal.toLowerCase();
         if (!['buy', 'sell'].includes(normalizedSignal)) return;
         const currentTime = Date.now();
         if (!this.groupChatLastAlertTimes[normalizedSignal]) {
@@ -43,14 +43,14 @@ class TelegramBotHandler {
         const timeSinceLastAlert = currentTime - lastAlertTime;
         if (timeSinceLastAlert >= this.config.alertCooldown) {
             try {
-                this.tBot.sendMessage(process.env.TELEGRAM_GROUPCHAT_ID, `${signal} signal for ${pair}`);
+                this.tBot.sendMessage(process.env.TELEGRAM_GROUPCHAT_ID, `${analysis.signal} signal for ${pair}`);
                 this.groupChatLastAlertTimes[normalizedSignal][pair] = currentTime;
-                console.log(`Alert sent for ${pair} (${signal})`);
+                console.log(`Alert sent for ${pair} (${normalizedSignal})`);
             } catch (error) {
-                console.error(`Failed to send alert for ${pair} (${signal}):`, error);
+                console.error(`Failed to send alert for ${pair} (${normalizedSignal}):`, error);
             }
         } else {
-            console.log(`Alert for ${pair} (${signal}) skipped. Cooldown: ${this.config.alertCooldown - timeSinceLastAlert}ms remaining`);
+            console.log(`Alert for ${pair} (${normalizedSignal}) skipped. Cooldown: ${this.config.alertCooldown - timeSinceLastAlert}ms remaining`);
         }
     }
 }
