@@ -178,10 +178,10 @@ class TradingBot {
     async considerNewOrder(pair, currentPrice, buyIsApproved, sellIsApproved) {
         if (buyIsApproved) {
             console.log('Conditions favorable for placing a buy order');
-            await this.placeBuyOrder(pair);
+            await this.placeBuyOrder(pair, currentPrice);
         } else if (sellIsApproved) {
             console.log('Conditions favorable for placing a sell order');
-            await this.placeSellOrder(pair);
+            await this.placeSellOrder(pair, currentPrice);
         } else {
             console.log('Current conditions not favorable for placing a new order');
         }
