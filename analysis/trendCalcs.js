@@ -40,13 +40,13 @@ const analyzeCandles = (candles, analysisWindow = candles.length) => {
 
   let priceTrend, volumeTrend;
 
-  if (avgPriceChange > 0.5) priceTrend = "Bullish";
-  else if (avgPriceChange < -0.5) priceTrend = "Bearish";
-  else priceTrend = "Sideways";
+  if (avgPriceChange > 0.5) priceTrend = "BULLISH";
+  else if (avgPriceChange < -0.5) priceTrend = "BEARISH";
+  else priceTrend = "SIDEWAYS";
 
-  if (avgVolumeChange > 5) volumeTrend = "Increasing";
-  else if (avgVolumeChange < -5) volumeTrend = "Decreasing";
-  else volumeTrend = "Stable";
+  if (avgVolumeChange > 5) volumeTrend = "INCREASING";
+  else if (avgVolumeChange < -5) volumeTrend = "DECREASING";
+  else volumeTrend = "STABLE";
 
   return {
     priceTrend,
@@ -60,16 +60,16 @@ const analyzeCandles = (candles, analysisWindow = candles.length) => {
     summary: `The market is showing a ${priceTrend.toLowerCase()} price trend with ${volumeTrend.toLowerCase()} volume. ` +
       `Average price change: ${avgPriceChange.toFixed(2)}%, Average volume change: ${avgVolumeChange.toFixed(2)}%. ` +
       `Overall price movement: ${overallPriceChange.toFixed(2)}%, Overall volume change: ${overallVolumeChange.toFixed(2)}%.`,
-    lastCandle  
+    //lastCandle  
   };
 };
 
-const shouldBuyOrSell = (indicators, candles) => {
+const shouldBuyOrSell = (indicators, candles, analysisWindow = candles.length) => {
   // Check if there are enough candles for analysis
   if (candles.length < 2) {
       return "Insufficient candle data for analysis";
   }
-
+  const candleAnalysis = analyzeCandles(candles, analysisWindow);// //if 2hr timeframe for candles changes, change the 12, 24/2 = 12; its a 24 hr analysis
   // Analyze the last candle
   const lastCandle = candles[candles.length - 1];
   const previousCandle = candles[candles.length - 2];
@@ -159,7 +159,7 @@ const shouldBuyOrSell = (indicators, candles) => {
   if (isVolumeIncreasing) buyScore += 1;
 
   // Incorporate price change into buy/sell scores
-  if (priceChange > 1) { // If the price has increased by more than 1%
+  if (priceChange > 1 ) { // If the price has increased by more than 1% and is less && priceChange < 3 than 3%
       buyScore += 1; // Favorable for buying
   } else if (priceChange < -1) { // If the price has decreased by more than 1%
       sellScore += 1; // Favorable for selling
@@ -172,14 +172,19 @@ const shouldBuyOrSell = (indicators, candles) => {
   if (aoNegative) sellScore++;
   if (isVolumeDecreasing) sellScore++; // Penalize sell score if volume decreases
 
-  // Flexibility: Only 'CONDITIONS_NEEDED' or more conditions need to be met for a buy or sell signal
-  if (buyScore >= CONDITIONS_NEEDED && highVolatility) {
-      return "Buy";
-  } else if (sellScore >= CONDITIONS_NEEDED && highVolatility) {
-      return "Sell";
-  } else {
-      return "Hold";
+  const resData = {
+    signal: '',
+    trend: candleAnalysis
   }
+  // Flexibility: Only 'CONDITIONS_NEEDED' or more conditions need to be met for a buy or sell signal
+  if (buyScore >= CONDITIONS_NEEDED && highVolatility && ['BULLISH', 'SIDEWAYS'].includes(candleAnalysis.priceTrend)) {//signal === TradingBot.BUY && [TradingBot.BULLISH, TradingBot.SIDEWAYS].includes(signal.priceTrend);
+    resData.signal = "BUY";
+  } else if (sellScore >= CONDITIONS_NEEDED && highVolatility) {
+    resData.signal = "SELL";
+  } else {
+    resData.signal = "HOLD";
+  }
+  return resData;
 };
 
 

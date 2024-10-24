@@ -36,6 +36,7 @@ class TablePrinter {
             { name: 'priceTrend', title: 'Price Trend' },
             { name: 'volumeTrend', title: 'Volume Trend' },
             { name: 'signal', title: 'Signal' },
+            { name: 'overallPriceChange', title: 'Prc Change' },
             { name: 'date', title: 'Date', alignment: 'center', color: 'blue' }
         ];
     }
@@ -50,16 +51,17 @@ class TablePrinter {
             ao: element.indicators?.current_ao,
             atr: element.indicators?.current_atr.toFixed(4),
             ema: element.indicators?.current_ema.toFixed(6),
-            priceTrend: element.trend?.priceTrend,
-            volumeTrend: element.trend?.volumeTrend,
-            signal: element.signal,
+            priceTrend: element.analysis?.trend.priceTrend,
+            volumeTrend: element.analysis?.trend.volumeTrend,
+            signal: element.analysis.signal,
+            overallPriceChange: element.analysis.trend.overallPriceChange,
             date: element.date
         };
     }
     
     getRowColor(element) {
-        return element.trend?.priceTrend === 'Bullish' || element.signal === 'Buy' ? 'green' :
-               element.trend?.priceTrend === 'Bearish' || element.signal === 'Sell' ? 'red' : '';
+        return element.analysis?.trend.priceTrend === 'BULLISH' || element.analysis.signal === 'BUY' ? 'green' :
+               element.analysis?.trend.priceTrend === 'BEARISH' || element.analysis.signal === 'SELL' ? 'red' : '';
     }
 }
 

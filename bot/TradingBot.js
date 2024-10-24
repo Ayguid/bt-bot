@@ -3,9 +3,9 @@ require('dotenv').config(); // Environment variables
 const path = require('path');
 const { execSync } = require('child_process'); // To run system commands for time synchronization
 // Local project modules
-const { serverTime, klines, fetchMyOrders, tickerPrice } = require('../utils/binance-spot.js');
+const { serverTime, klines, fetchMyOrders, tickerPrice, userAsset, fetchMyAccount } = require('../utils/binance-spot.js');
 const { getIndicators } = require('../analysis/indicators.js');
-const { analyzeCandles, shouldBuyOrSell } = require('../analysis/trendCalcs.js');
+const { shouldBuyOrSell } = require('../analysis/trendCalcs.js');
 const { saveData } = require('../utils/fileManager.js');
 const RateLimitedQueue = require('../classes/RateLimitedQueue.js');
 const TablePrinter = require('../utils/tablePrinter.js');
@@ -22,9 +22,6 @@ class TradingBot {
     static PARTIALLY_FILLED = 'PARTIALLY_FILLED';
     static CANCELED = 'CANCELED';
     static NEW = 'NEW';
-    //TRENDS
-    static BULLISH = 'Bullish';
-    static SIDEWAYS = 'Sideways';
 
     constructor() {
         this.config = config; // Use the imported config
@@ -64,9 +61,9 @@ class TradingBot {
         return action ? await action() : 'Unknown command.';
     }
 
-    sendGroupChatAlert(pair, signal) {
+    sendGroupChatAlert(pair, analysis) {
         // Delegate alert sending to the Telegram bot handler
-        this.telegramBotHandler.sendGroupChatAlert(pair, signal);
+        this.telegramBotHandler.sendGroupChatAlert(pair, analysis);
     }
 
     startBot() {
@@ -100,34 +97,32 @@ class TradingBot {
         });
     }
 
-    async trade(pair, currentPrice, orders, trend, signal) {
-        if (!pair || !currentPrice || !orders || !trend || !signal) {
+    async trade(pair, currentPrice, orders, analysis) {
+        if (!pair || !currentPrice || !orders || !analysis ) {
             console.error('Missing data/params to trade');
             return;
         }
-        console.log('\x1b[32mAttempting to trade\x1b[0m', { pair, price: currentPrice.price, signal });
+        console.log('\x1b[32mAttempting to trade\x1b[0m', { pair, price: currentPrice.price});
         //
-        const approveBuyIndicators = signal === TradingBot.BUY && 
-            [TradingBot.BULLISH, TradingBot.SIDEWAYS].includes(trend.priceTrend);
-        const approveSellIndicators = signal === TradingBot.SELL && 
-            trend.priceTrend === TradingBot.BULLISH;
+        const buyIsApproved = analysis.signal == TradingBot.BUY
+        const sellIsApproved = analysis.signal == TradingBot.SELL
         //
         if (!Array.isArray(orders) || orders.length === 0) {
             console.log(`No orders for ${pair}, considering placing one based on current indicators.`);
-            await this.considerNewOrder(pair, currentPrice, approveBuyIndicators, approveSellIndicators);
+            await this.considerNewOrder(pair, currentPrice, buyIsApproved, sellIsApproved);
         } else {
             const latestOrder = orders.reduce((latest, order) => 
                 new Date(order.time) > new Date(latest.time) ? order : latest
             );
 
-            console.log(`Latest order - status: ${latestOrder.status}, side: ${latestOrder.side}`);
+            console.log(`Latest order - status: ${latestOrder.status}, side: ${latestOrder.side} , Order price: ${latestOrder.price}`);
 
             switch (latestOrder.status) {
                 case TradingBot.FILLED:
-                    await this.handleFilledOrder(pair, currentPrice, latestOrder, approveBuyIndicators, approveSellIndicators);
+                    await this.handleFilledOrder(pair, currentPrice, latestOrder, buyIsApproved, sellIsApproved);
                     break;
                 case TradingBot.PARTIALLY_FILLED:
-                    await this.handlePartiallyFilledOrder(pair, currentPrice, latestOrder, approveBuyIndicators, approveSellIndicators);
+                    await this.handlePartiallyFilledOrder(pair, currentPrice, latestOrder, buyIsApproved, sellIsApproved);
                     break;
                 case TradingBot.NEW:
                     console.log('Order pending. Monitoring for completion.');
@@ -135,7 +130,7 @@ class TradingBot {
                     break;
                 case TradingBot.CANCELED:
                     console.log('Last order was canceled. Considering new order based on current conditions.');
-                    await this.considerNewOrder(pair, currentPrice, approveBuyIndicators, approveSellIndicators);
+                    await this.considerNewOrder(pair, currentPrice, buyIsApproved, sellIsApproved);
                     break;
                 default:
                     console.log(`Unhandled order status: ${latestOrder.status}. Please review.`);
@@ -143,11 +138,11 @@ class TradingBot {
         }
     }
 
-    async handleFilledOrder(pair, currentPrice, order, approveBuyIndicators, approveSellIndicators) {
-        if (order.side === TradingBot.SELL && approveBuyIndicators) {
+    async handleFilledOrder(pair, currentPrice, order, buyIsApproved, sellIsApproved) {
+        if (order.side === TradingBot.SELL && buyIsApproved) {
             console.log('Last sell order filled. Conditions favorable for buying.');
             await this.placeBuyOrder(pair);
-        } else if (order.side === TradingBot.BUY && approveSellIndicators) {
+        } else if (order.side === TradingBot.BUY && sellIsApproved) {
             console.log('Last buy order filled. Conditions favorable for selling.');
             await this.placeSellOrder(pair);
         } else {
@@ -155,21 +150,21 @@ class TradingBot {
         }
     }
 
-    async handlePartiallyFilledOrder(pair, currentPrice, order, approveBuyIndicators, approveSellIndicators) {
+    async handlePartiallyFilledOrder(pair, currentPrice, order, buyIsApproved, sellIsApproved) {
         console.log(`Order for ${pair} is partially filled. Filled amount: ${order.executedQty}`);
         
         const remainingQty = order.quantity - order.executedQty;
         console.log(`Remaining quantity to be filled: ${remainingQty}`);
 
         if (order.side === TradingBot.BUY) {
-            if (approveBuyIndicators) {
+            if (buyIsApproved) {
                 console.log('Conditions still favorable for buying. Keeping the order open.');
             } else {
                 console.log('Conditions no longer favorable for buying. Consider cancelling remaining order.');
                 // await this.cancelRemainingOrder(pair, order);
             }
         } else if (order.side === TradingBot.SELL) {
-            if (approveSellIndicators) {
+            if (sellIsApproved) {
                 console.log('Conditions still favorable for selling. Keeping the order open.');
             } else {
                 console.log('Conditions no longer favorable for selling. Consider cancelling remaining order.');
@@ -180,13 +175,13 @@ class TradingBot {
         // Implement any additional async logic for partially filled orders
     }
 
-    async considerNewOrder(pair, currentPrice, approveBuyIndicators, approveSellIndicators) {
-        if (approveBuyIndicators) {
+    async considerNewOrder(pair, currentPrice, buyIsApproved, sellIsApproved) {
+        if (buyIsApproved) {
             console.log('Conditions favorable for placing a buy order');
-            await this.placeBuyOrder(pair);
-        } else if (approveSellIndicators) {
+            await this.placeBuyOrder(pair, currentPrice);
+        } else if (sellIsApproved) {
             console.log('Conditions favorable for placing a sell order');
-            await this.placeSellOrder(pair);
+            await this.placeSellOrder(pair, currentPrice);
         } else {
             console.log('Current conditions not favorable for placing a new order');
         }
@@ -194,10 +189,22 @@ class TradingBot {
 
     async placeBuyOrder(pair, currentPrice) {
         console.log(`Placing buy order for ${pair}`);
+        //
+        const balances = await this.getBalances(pair);
+        const assetBalance = balances[0];
+        const stableBalance = balances[1];
+        if(stableBalance.free < this.config.orderQty) {
+            console.warn('Not enough balance to place order.');
+            return;
+        }
+        console.log(assetBalance, stableBalance);
+        //const qty = currentPrice / TradingBot.ORDER_QTY;
+        //const order = await this.makeQueuedReq(placeOrder(pair, 'BUY', 'LIMIT', {price: currentPrice, quantity: qty, timeInForce: 'GTC'}));
+        //return order;
         // Implement async logic to place a buy order
         // For example:
         // const order = await this.api.placeBuyOrder(pair, quantity, price);
-        // this.currentTrades.set(pair, { side: TradingBot.BUY, status: TradingBot.NEW, orderId: order.id });
+        // this.currentTrades.set(pair, { side: 'TradingBot.BUY', status: TradingBot.NEW, orderId: order.id });
     }
 
     async placeSellOrder(pair, currentPrice) {
@@ -229,17 +236,19 @@ class TradingBot {
 
     async processPair(pair, isTradeable = false) {
         console.log('\x1b[33m%s\x1b[0m',`${pair}------------------`)
-        const joinedPair = pair.replace('_', '');
-        const [ohlcv, orders, currentPrice] = await Promise.all([ //parallel method
+        const joinedPair = pair.replace('_', '');//turns ETH_USDT into ETHUSDT
+        // Get pair kandles, (orders and price) if isTradeable
+        const [ohlcv, orders, currentPrice] = await Promise.all([ //parallel method //we fetch balances only inside buy or sell methods, to reduce api calls
             this.makeQueuedReq(klines, joinedPair, this.config.klinesInterval),
             isTradeable ? this.makeQueuedReq(fetchMyOrders, joinedPair) : false,
             isTradeable ? this.makeQueuedReq(tickerPrice, joinedPair) : false,
+            //isTradeable ? this.getBalances(pair) : false,
         ]);
-        //
-        if (ohlcv.error) {;
+        //if error in candles exit
+        if (ohlcv.error) {
             console.error('Failed to fetch OHLCV data');
             if (this.config.debug) console.error(`Error or invalid data:`, ohlcv);
-            return null; // Return early if OHLCV is invalid
+            return null;
         }
         // There can only be orders if the pair is tradeable
         if (orders.error) {
@@ -254,22 +263,45 @@ class TradingBot {
             if (this.config.debug) {
                 console.warn(`Error details:`, currentPrice);
             }
-        } 
-        //analysis
+        }
+        // Analysis
         const indicators = getIndicators(ohlcv);
-        const trend = analyzeCandles(ohlcv, 12);
-        const signal = shouldBuyOrSell(indicators, ohlcv);
-        this.sendGroupChatAlert(pair, signal);// the method itself checks for time passed between alerts and signal type
+        const analysis = shouldBuyOrSell(indicators, ohlcv, this.config.analysisWindow); //if 2hr timeframe for candles changes, change the 12 inside analysisWindow to = 24/timeframe
+        //
+        this.sendGroupChatAlert(pair, analysis);// the method itself checks for time passed between alerts and analysis type
         //trade
-        if(isTradeable && !orders.error && !currentPrice.error) await this.trade(joinedPair, currentPrice, orders, trend, signal);
+        if(isTradeable && !orders.error && !currentPrice.error) await this.trade(joinedPair, currentPrice, orders, analysis);
         //return result
         return {
             pair,
             indicators,
-            trend,
-            signal,
+            analysis,
             date: new Date().toLocaleString('es', { dateStyle: 'short', timeStyle: 'short' })
         };  
+    }
+
+    async getBalances(pair){ // userAsset wont work on testnet, this is a workaround that uses the whole wallet balance in testnet
+        const assetKey = pair.split("_")[0];//ETH_
+        const stableKey = pair.split("_")[1];//_USDT
+        const TESTNET = process.env.TESTNET === 'true';
+        let assetBalance;
+        let stableBalance;
+        if(TESTNET){
+            const wallet = await this.makeQueuedReq(fetchMyAccount);
+            assetBalance = wallet.balances.find(asset => asset.asset == assetKey)
+            stableBalance = wallet.balances.find(asset => asset.asset == stableKey)
+        }else{
+            [ assetBalance, stableBalance ] = await Promise.all([ //parallel method
+                this.makeQueuedReq(userAsset, assetKey),
+                this.makeQueuedReq(userAsset, stableKey)
+            ]);
+            assetBalance = assetBalance[0]
+            stableBalance = stableBalance[0]
+        }
+        return [
+            assetBalance,
+            stableBalance
+        ];    
     }
 
     async processAllPairs() {
