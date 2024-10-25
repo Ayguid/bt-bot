@@ -9,8 +9,8 @@ const { shouldBuyOrSell } = require('../analysis/trendCalcs.js');
 const { saveData } = require('../utils/fileManager.js');
 const RateLimitedQueue = require('../classes/RateLimitedQueue.js');
 const TablePrinter = require('../utils/tablePrinter.js');
-const TelegramBotHandler = require('./TelegramBotHandler.js');
-const PairManager = require('./PairManager.js');
+const TelegramBotHandler = require('../bot/TelegramBotHandler.js');
+const PairManager = require('../bot/PairManager.js');
 const {plusPercent, minusPercent} = require('../utils/helpers.js');
 const config = require('../config.js'); // Configuration file
 
@@ -103,13 +103,13 @@ class TradingBot {
             console.error('Missing data/params to trade');
             return;
         }
-        console.log('\x1b[32mAttempting to trade\x1b[0m', { pair: pair.key, price: currentPrice});
+        console.log('\x1b[32mAttempting to trade\x1b[0m', { pair, price: currentPrice});
         //
         const buyIsApproved = analysis.signal == TradingBot.BUY//analysis.signal == TradingBot.BUY
         const sellIsApproved = analysis.signal == TradingBot.SELL
         //
         if (!Array.isArray(orders) || orders.length === 0) {
-            console.log(`No orders for ${pair.key}, considering placing one based on current indicators.`);
+            console.log(`No orders for ${pair}, considering placing one based on current indicators.`);
             await this.considerNewOrder(pair, false, currentPrice, buyIsApproved, sellIsApproved);
         } else {
             const latestOrder = orders.reduce((latest, order) => 
@@ -189,8 +189,8 @@ class TradingBot {
     }
 
     async placeBuyOrder(pair, currentPrice) {
-        console.log(`Placing buy order for ${pair.key}`);
-        const balances = await this.getBalances(pair.key);
+        console.log(`Placing buy order for ${pair}`);
+        const balances = await this.getBalances(pair);
         //const assetBalance = balances[0];
         const stableBalance = balances[1];
         const joinedPair = pair.replace('_', '');//turns ETH_USDT into ETHUSDT
@@ -198,7 +198,9 @@ class TradingBot {
             console.warn('Not enough balance to place order.');
             return;
         }
-        const buyPrice = minusPercent(pair.bellowPrice, currentPrice).toFixed(pair.decimals); //later maybe we subtract x%
+        const toFixedQty = this.pairManager.getPrecision(pair.split("_")[0]);
+        console.log('To fixed', toFixedQty);
+        const buyPrice = minusPercent(this.config.belowPrice, currentPrice).toFixed(2); //later maybe we subtract x%
         //console.log('Buy price', buyPrice);
         const qty = (this.config.orderQty / currentPrice).toFixed(2);
         //console.log('currentPrice', currentPrice,'Qty', qty);
@@ -211,11 +213,11 @@ class TradingBot {
     }
 
     async placeSellOrder(pair, latestOrder) {
-        console.log(`Placing sell order for ${pair.key}`);
-        const balances = await this.getBalances(pair.key);
+        console.log(`Placing sell order for ${pair}`);
+        const balances = await this.getBalances(pair);
         const assetBalance = balances[0];
         //const stableBalance = balances[1];
-        const joinedPair = pair.key.replace('_', '');//turns ETH_USDT into ETHUSDT
+        const joinedPair = pair.replace('_', '');//turns ETH_USDT into ETHUSDT
         //console.log(assetBalance, stableBalance, sellPrice);
         
         if(assetBalance.free < 1) {//fix this
@@ -223,7 +225,7 @@ class TradingBot {
             return;
         }
         const orderPrice = parseFloat(latestOrder.price);
-        const sellPrice = plusPercent(pair.profitMgn, orderPrice).toFixed(pair.decimals); //later maybe we subtract x%
+        const sellPrice = plusPercent(this.config.profitMargin, orderPrice).toFixed(2); //later maybe we subtract x%
         
         //
         //const qty = currentPrice / TradingBot.ORDER_QTY;
@@ -236,7 +238,7 @@ class TradingBot {
     }
 
     async monitorPendingOrder(pair, currentPrice, order) {
-        console.log(`Monitoring pending ${order.side} order for ${pair.key}`);
+        console.log(`Monitoring pending ${order.side} order for ${pair}`);
         // Implement async logic to monitor pending order
         // For example:
         // const updatedOrder = await this.api.getOrderStatus(pair, order.id);
@@ -255,8 +257,8 @@ class TradingBot {
     }
 
     async processPair(pair, isTradeable = false) {
-        console.log('\x1b[33m%s\x1b[0m',`${pair.key}------------------`)
-        const joinedPair = pair.key.replace('_', '');//turns ETH_USDT into ETHUSDT
+        console.log('\x1b[33m%s\x1b[0m',`${pair}------------------`)
+        const joinedPair = pair.replace('_', '');//turns ETH_USDT into ETHUSDT
         // Get pair kandles, (orders and price) if isTradeable
         const [ohlcv, orders, currentPrice] = await Promise.all([ //parallel method //we fetch balances only inside buy or sell methods, to reduce api calls
             this.makeQueuedReq(klines, joinedPair, this.config.klinesInterval),
@@ -288,7 +290,7 @@ class TradingBot {
         const indicators = getIndicators(ohlcv);
         const analysis = shouldBuyOrSell(indicators, ohlcv, this.config.analysisWindow); //if 2hr timeframe for candles changes, change the 12 inside analysisWindow to = 24/timeframe
         //
-        this.sendGroupChatAlert(pair.key, analysis);// the method itself checks for time passed between alerts and analysis type
+        this.sendGroupChatAlert(pair, analysis);// the method itself checks for time passed between alerts and analysis type
         //trade
         if(isTradeable && !orders.error && !currentPrice.error) await this.trade(pair, currentPrice.price, orders, analysis);
         //return result
@@ -331,7 +333,7 @@ class TradingBot {
         const allPairs = this.pairManager.getAllPairs(); // Get all pairs from PairManager
         const tradeablePairs = this.pairManager.getTradeablePairs(); // Get all pairs from PairManager
         const results = new Array(allPairs.length); // Initialize results array to map the order of the pairs
-        //console.log(tradeablePairs);
+    
         for (const pair of allPairs) {
             try {
                 const isTradeable = tradeablePairs.includes(pair);

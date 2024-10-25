@@ -7,7 +7,7 @@ const apiSecret = TESTNET ? process.env.BINANCE_API_SECRET_TEST : process.env.BI
 
 const client = new Spot(apiKey, apiSecret, { baseURL: TESTNET ? TEST_URL : undefined });
 
-const DEBUG = false;
+const DEBUG = true;
 
 // Centralized error handling function
 const handleApiError = (error, methodName, params = {}) => {
@@ -23,7 +23,7 @@ const handleApiError = (error, methodName, params = {}) => {
 const makeApiCall = async (method, ...args) => {
     try {
         const response = await method.bind(client)(...args);
-        if (DEBUG) client.logger.log(response.data);
+        //if (DEBUG) client.logger.log(response.data);
         return response.data;
     } catch (error) {
         return handleApiError(error, method.name, args);

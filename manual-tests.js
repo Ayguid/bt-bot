@@ -20,7 +20,8 @@ placeOrder('ADAUSDC', 'BUY', 'LIMIT', {price: 0.5193, quantity: 100, timeInForce
 
 //placeOrder('BTCUSDT', 'BUY', 'STOP_LOSS', {price: 66129, quantity: 0.1, timeInForce: 'GTC', stopPrice: 65129});
 
-const results = async () => {const res =  await  assetDetail('BNB'); console.log(res)}
+// const results = async () => {const res =  await  assetDetail('BNB'); console.log(res)}
+const results = async () => {const res =  await  fetchMyAccount(); console.log(res)}
 
 
 results()

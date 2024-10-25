@@ -1,31 +1,32 @@
 {
   "pairs": [
-    "BTC_USDT",
-    "ETH_USDT",
-    "FET_USDT",
-    "FTM_USDT",
-    "FIO_USDT",
-    "ICP_USDT",
-    "COTI_USDT",
-    "KP3R_USDT",
-    "AVAX_USDT",
-    "LINK_USDT",
-    "MATIC_USDT",
-    "FLOKI_USDT",
-    "PEPE_USDT",
-    "WIF_USDT",
-    "BONK_USDT",
-    "PEOPLE_USDT",
-    "TURBO_USDT",
-    "SOL_USDT",
-    "1INCH_USDT",
-    "ARKM_USDT",
-    "BURGER_USDT",
-    "DOGS_USDT"
-  ],
-  "tradeablePairs": [
-    "BTC_USDT",
-    "ETH_USDT",
-    "FET_USDT"
+    {
+      "key": "BTC_USDT",
+      "decimals": 2,
+      "profitMgn": 0.5,
+      "bellowPrice": 0.25,
+      "tradeable": true
+    },
+    {
+      "key": "ETH_USDT",
+      "decimals": 2,
+      "profitMgn": 0.5,
+      "bellowPrice": 0.25,
+      "tradeable": true
+    },
+    {
+      "key": "SOL_USDT",
+      "decimals": 2,
+      "profitMgn": 0.5,
+      "bellowPrice": 0.25,
+      "tradeable": false
+    },
+    {
+      "key": "AVAX_USDT",
+      "decimals": 2,
+      "profitMgn": 0.5,
+      "bellowPrice": 0.25,
+      "tradeable": false
+    }
   ]
 }

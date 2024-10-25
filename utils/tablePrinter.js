@@ -43,7 +43,7 @@ class TablePrinter {
     
     formatRowData(element) {
         return {
-            pair: element.pair,
+            pair: element.pair.key,
             rsi: element.indicators?.current_rsi.toFixed(2),
             stochRsi: element.indicators?.current_stoch_rsi?.k?.toFixed(2),
             macd: element.indicators?.current_macd?.histogram.toFixed(4),

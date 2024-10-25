@@ -13,10 +13,8 @@ const config = {
     shouldResynch: false,
     timeCheckInterval: 60000,
     maxTimeDifferenceMs: 1000,
-    // Margins
+    // order qty
     orderQty: 50, // usdt
-    profitMargin: 0.5, // 0.5%  
-    stopMargin: 1.5,  // 1%
 };
 
 module.exports = config;
