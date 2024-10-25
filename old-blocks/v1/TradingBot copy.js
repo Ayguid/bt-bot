@@ -3,16 +3,16 @@ require('dotenv').config(); // Environment variables
 const path = require('path');
 const { execSync } = require('child_process'); // To run system commands for time synchronization
 // Local project modules
-const { serverTime, klines, fetchMyOrders, tickerPrice, userAsset, fetchMyAccount, placeOrder } = require('../utils/binance-spot.js');
-const { getIndicators } = require('../analysis/indicators.js');
-const { shouldBuyOrSell } = require('../analysis/trendCalcs.js');
-const { saveData } = require('../utils/fileManager.js');
-const RateLimitedQueue = require('../classes/RateLimitedQueue.js');
-const TablePrinter = require('../utils/tablePrinter.js');
-const TelegramBotHandler = require('../bot/TelegramBotHandler.js');
-const PairManager = require('../bot/PairManager.js');
-const {plusPercent, minusPercent} = require('../utils/helpers.js');
-const config = require('../config.js'); // Configuration file
+const { serverTime, klines, fetchMyOrders, tickerPrice, userAsset, fetchMyAccount, placeOrder } = require('../../utils/binance-spot.js');
+const { getIndicators } = require('../../analysis/indicators.js');
+const { shouldBuyOrSell } = require('../../analysis/trendCalcs.js');
+const { saveData } = require('../../utils/fileManager.js');
+const RateLimitedQueue = require('../../classes/RateLimitedQueue.js');
+const TablePrinter = require('../../utils/tablePrinter.js');
+const TelegramBotHandler = require('../../bot/TelegramBotHandler.js');
+const PairManager = require('../../bot/PairManager.js');
+const {plusPercent, minusPercent} = require('../../utils/helpers.js');
+const config = require('../../config.js'); // Configuration file
 
 class TradingBot {
     //ORDER_TYPES

@@ -2,6 +2,7 @@ const config = {
     debug: true,
     isRunning: false,
     telegramBotEnabled: true,
+    printTable: true,
     saveData: false,
     //
     loopDelay: 500, //delay for the whole pairs array loop
@@ -13,8 +14,6 @@ const config = {
     shouldResynch: false,
     timeCheckInterval: 60000,
     maxTimeDifferenceMs: 1000,
-    // order qty
-    orderQty: 50, // usdt
 };
 
 module.exports = config;

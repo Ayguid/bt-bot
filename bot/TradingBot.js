@@ -11,7 +11,7 @@ const RateLimitedQueue = require('../classes/RateLimitedQueue.js');
 const TablePrinter = require('../utils/tablePrinter.js');
 const TelegramBotHandler = require('./TelegramBotHandler.js');
 const PairManager = require('./PairManager.js');
-const {plusPercent, minusPercent} = require('../utils/helpers.js');
+const {plusPercent, minusPercent, calculateProfit} = require('../utils/helpers.js');
 const config = require('../config.js'); // Configuration file
 
 class TradingBot {
@@ -116,7 +116,7 @@ class TradingBot {
                 new Date(order.time) > new Date(latest.time) ? order : latest
             );
 
-            console.log(`Latest order - status: ${latestOrder.status}, side: ${latestOrder.side} , Order price: ${latestOrder.price}`);
+            console.log(`Latest order - status: ${latestOrder.status}, side: ${latestOrder.side}`);
 
             switch (latestOrder.status) {
                 case TradingBot.FILLED:
@@ -126,11 +126,11 @@ class TradingBot {
                     await this.handlePartiallyFilledOrder(pair, latestOrder, currentPrice, buyIsApproved, sellIsApproved);
                     break;
                 case TradingBot.NEW:
-                    console.log('Order pending. Monitoring for completion.');
+                    //console.log('Order pending. Monitoring for completion.');
                     await this.monitorPendingOrder(pair, currentPrice, latestOrder);
                     break;
                 case TradingBot.CANCELED:
-                    console.log('Last order was canceled. Considering new order based on current conditions.');
+                    //console.log('Last order was canceled. Considering new order based on current conditions.');
                     await this.considerNewOrder(pair, latestOrder, currentPrice, buyIsApproved, sellIsApproved);
                     break;
                 default:
@@ -139,7 +139,7 @@ class TradingBot {
         }
     }
 
-    async considerNewOrder(pair, latestOrder=false, currentPrice, buyIsApproved, sellIsApproved) {
+    async considerNewOrder(pair, latestOrder = false, currentPrice, buyIsApproved, sellIsApproved) {
         if (buyIsApproved) {
             console.log('Conditions favorable for placing a buy order');
             await this.placeBuyOrder(pair, currentPrice);
@@ -193,21 +193,15 @@ class TradingBot {
         const balances = await this.getBalances(pair.key);
         //const assetBalance = balances[0];
         const stableBalance = balances[1];
-        const joinedPair = pair.replace('_', '');//turns ETH_USDT into ETHUSDT
-        if(stableBalance.free < this.config.orderQty) {
+        const joinedPair = pair.key.replace('_', '');//turns ETH_USDT into ETHUSDT
+        if(stableBalance.free < pair.orderQty) {
             console.warn('Not enough balance to place order.');
             return;
         }
-        const buyPrice = minusPercent(pair.bellowPrice, currentPrice).toFixed(pair.decimals); //later maybe we subtract x%
-        //console.log('Buy price', buyPrice);
-        const qty = (this.config.orderQty / currentPrice).toFixed(2);
-        //console.log('currentPrice', currentPrice,'Qty', qty);
+        const buyPrice = minusPercent(pair.belowPrice, currentPrice).toFixed(pair.decimals);
+        const qty = (pair.orderQty / currentPrice).toFixed(pair.decimals);
         const order = await this.makeQueuedReq(placeOrder, joinedPair, TradingBot.BUY, 'LIMIT', {price: buyPrice, quantity: qty, timeInForce: 'GTC'});
-        //console.log(order);
         return order;
-        // For example:
-        // const order = await this.api.placeBuyOrder(pair, quantity, price);
-        // this.currentTrades.set(pair, { side: 'TradingBot.BUY', status: TradingBot.NEW, orderId: order.id });
     }
 
     async placeSellOrder(pair, latestOrder) {
@@ -216,27 +210,28 @@ class TradingBot {
         const assetBalance = balances[0];
         //const stableBalance = balances[1];
         const joinedPair = pair.key.replace('_', '');//turns ETH_USDT into ETHUSDT
-        //console.log(assetBalance, stableBalance, sellPrice);
         
-        if(assetBalance.free < 1) {//fix this
+        if(assetBalance.free <= 0) {//fix this
             console.warn('Not enough balance to place order.');
             return;
         }
-        const orderPrice = parseFloat(latestOrder.price);
-        const sellPrice = plusPercent(pair.profitMgn, orderPrice).toFixed(pair.decimals); //later maybe we subtract x%
-        
+
+        const sellPrice = plusPercent(pair.profitMgn, latestOrder.price).toFixed(pair.decimals); //later maybe we subtract x%
         //
         //const qty = currentPrice / TradingBot.ORDER_QTY;
         const order = await this.makeQueuedReq(placeOrder, joinedPair, TradingBot.SELL, 'LIMIT', {price: sellPrice, quantity: latestOrder.executedQty, timeInForce: 'GTC'});
         return order;
-        // Implement async logic to place a sell order
-        // For example:
-        // const order = await this.api.placeSellOrder(pair, quantity, price);
-        // this.currentTrades.set(pair, { side: TradingBot.SELL, status: TradingBot.NEW, orderId: order.id });
     }
 
     async monitorPendingOrder(pair, currentPrice, order) {
-        console.log(`Monitoring pending ${order.side} order for ${pair.key}`);
+        const currentProfit = calculateProfit(currentPrice, minusPercent(pair.profitMgn, order.price));//should be order price off buy order, this is not accurate
+        console.log(
+            `Monitoring pending ${order.side},
+             order for ${pair.key}, 
+             orderId: ${order.orderId}, 
+             Order Price: ${order.price}, 
+             Profit is: ${currentProfit} %`
+            );
         // Implement async logic to monitor pending order
         // For example:
         // const updatedOrder = await this.api.getOrderStatus(pair, order.id);
@@ -255,7 +250,7 @@ class TradingBot {
     }
 
     async processPair(pair, isTradeable = false) {
-        console.log('\x1b[33m%s\x1b[0m',`${pair.key}------------------`)
+        console.log('\x1b[33m%s\x1b[0m',`Processing pair: ${pair.key}`)
         const joinedPair = pair.key.replace('_', '');//turns ETH_USDT into ETHUSDT
         // Get pair kandles, (orders and price) if isTradeable
         const [ohlcv, orders, currentPrice] = await Promise.all([ //parallel method //we fetch balances only inside buy or sell methods, to reduce api calls
@@ -292,10 +287,12 @@ class TradingBot {
         //trade
         if(isTradeable && !orders.error && !currentPrice.error) await this.trade(pair, currentPrice.price, orders, analysis);
         //return result
+        console.log('\x1b[33m%s\x1b[0m','----------------');
         return {
             pair,
             indicators,
             analysis,
+            orders,
             date: new Date().toLocaleString('es', { dateStyle: 'short', timeStyle: 'short' })
         };  
     }
@@ -328,6 +325,7 @@ class TradingBot {
     }
 
     async processAllPairs() {
+        console.log('Processing all pairs');
         const allPairs = this.pairManager.getAllPairs(); // Get all pairs from PairManager
         const tradeablePairs = this.pairManager.getTradeablePairs(); // Get all pairs from PairManager
         const results = new Array(allPairs.length); // Initialize results array to map the order of the pairs
@@ -339,7 +337,7 @@ class TradingBot {
                 if (result) {
                     const index = allPairs.indexOf(pair); // Use the index to maintain order
                     results[index] = result; // Store result
-                    this.botDataLogger[pair] = result; // Update botDataLogger with the latest result
+                    this.botDataLogger[pair.key] = result; // Update botDataLogger with the latest result
                 }
                 if (this.config.pairDelay) await this.wait(3000); //for debug 
             } catch (error) {
@@ -359,12 +357,12 @@ class TradingBot {
             const results = await this.processAllPairs();
             console.timeEnd('Processing round');
             //
-            this.tablePrinter.print(results); // Use the TablePrinter instance to print the table
+            if (this.config.printTable) this.tablePrinter.print(results); // Use the TablePrinter instance to print the table
             if (this.config.saveData) saveData(this.botDataLogger, 'final_data.json');
             //
-            console.time('Delay round');
+            //console.time('Delay round');
             if (this.config.loopDelay) await this.wait(this.config.loopDelay);
-            console.timeEnd('Delay round');
+            //console.timeEnd('Delay round');
         }
     }
     //server time diff part

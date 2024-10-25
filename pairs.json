@@ -1,32 +1,114 @@
-{
-  "pairs": [
-    {
-      "key": "BTC_USDT",
-      "decimals": 2,
-      "profitMgn": 0.5,
-      "bellowPrice": 0.25,
-      "tradeable": true
-    },
-    {
-      "key": "ETH_USDT",
-      "decimals": 2,
-      "profitMgn": 0.5,
-      "bellowPrice": 0.25,
-      "tradeable": true
-    },
-    {
-      "key": "SOL_USDT",
-      "decimals": 2,
-      "profitMgn": 0.5,
-      "bellowPrice": 0.25,
-      "tradeable": false
-    },
-    {
-      "key": "AVAX_USDT",
-      "decimals": 2,
-      "profitMgn": 0.5,
-      "bellowPrice": 0.25,
-      "tradeable": false
-    }
-  ]
-}
+[
+  {
+    "key": "BTC_USDT",
+    "decimals": 2,
+    "profitMgn": 0.5,
+    "belowPrice": 0.25,
+    "orderQty": 50, 
+    "tradeable": true
+  },
+  {
+    "key": "ETH_USDT",
+    "decimals": 2,
+    "profitMgn": 0.5,
+    "belowPrice": 0.25,
+    "orderQty": 50,
+    "tradeable": true
+  },
+  {
+    "key": "FET_USDT",
+    "decimals": 2,
+    "profitMgn": 0.5,
+    "belowPrice": 0.25,
+    "orderQty": 50,
+    "tradeable": true
+  },
+  {
+    "key": "SOL_USDT",
+    "decimals": 2,
+    "profitMgn": 0.5,
+    "belowPrice": 0.25,
+    "orderQty": 50,
+    "tradeable": false
+  },
+  {
+    "key": "AVAX_USDT",
+    "decimals": 2,
+    "profitMgn": 0.5,
+    "belowPrice": 0.25,
+    "orderQty": 50,
+    "tradeable": false
+  },
+  {
+    "key": "ICP_USDT",
+    "decimals": 2,
+    "profitMgn": 0.5,
+    "belowPrice": 0.25,
+    "orderQty": 50,
+    "tradeable": false
+  },
+  {
+    "key": "COTI_USDT",
+    "decimals": 2,
+    "profitMgn": 0.5,
+    "belowPrice": 0.25,
+    "orderQty": 50,
+    "tradeable": false
+  },
+  {
+    "key": "TURBO_USDT",
+    "decimals": 2,
+    "profitMgn": 0.5,
+    "belowPrice": 0.25,
+    "orderQty": 50,
+    "tradeable": false
+  },
+  {
+    "key": "LINK_USDT",
+    "decimals": 2,
+    "profitMgn": 0.5,
+    "belowPrice": 0.25,
+    "orderQty": 50,
+    "tradeable": false
+  },
+  {
+    "key": "1INCH_USDT",
+    "decimals": 2,
+    "profitMgn": 0.5,
+    "belowPrice": 0.25,
+    "orderQty": 50,
+    "tradeable": false
+  },
+  {
+    "key": "PEOPLE_USDT",
+    "decimals": 2,
+    "profitMgn": 0.5,
+    "belowPrice": 0.25,
+    "orderQty": 50,
+    "tradeable": false
+  },
+  {
+    "key": "DOGE_USDT",
+    "decimals": 2,
+    "profitMgn": 0.5,
+    "belowPrice": 0.25,
+    "orderQty": 50,
+    "tradeable": false
+  },
+  {
+    "key": "FIO_USDT",
+    "decimals": 2,
+    "profitMgn": 0.5,
+    "belowPrice": 0.25,
+    "orderQty": 50,
+    "tradeable": false
+  },
+  {
+    "key": "FTM_USDT",
+    "decimals": 2,
+    "profitMgn": 0.5,
+    "belowPrice": 0.25,
+    "orderQty": 50,
+    "tradeable": false
+  }
+]

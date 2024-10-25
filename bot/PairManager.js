@@ -11,12 +11,13 @@ class PairManager {
         try {
             const data = fs.readFileSync(this.pairsFile);
             const pairsData = JSON.parse(data);
-            this.allPairs = pairsData.pairs || [];
+            this.allPairs = pairsData || [];
             this.default = { 
                 key: "",
                 decimals: 2,
                 profitMgn: 0.5,
-                bellowPrice: 0.25,
+                belowPrice: 0.25,
+                orderQty: 50, // represents second asset in pair, in this case usdt
                 tradeable: true
             }; // Default values for new pairs
         } catch (error) {
@@ -25,14 +26,16 @@ class PairManager {
                 key: "BTC_USDT",
                 decimals: 2,
                 profitMgn: 0.5,
-                bellowPrice: 0.25,
+                belowPrice: 0.25,
+                orderQty: 50, //_usdt
                 tradeable: true
               },
               { 
                 key: "ETH_USDT",
                 decimals: 2,
                 profitMgn: 0.5,
-                bellowPrice: 0.25,
+                belowPrice: 0.25,
+                orderQty: 50,
                 tradeable: true
               }]; // Default pairs if file read fails
         }
@@ -45,30 +48,7 @@ class PairManager {
     getTradeablePairs() {
         return this.allPairs.filter(pair=> pair.tradeable); // Method to return tradeable pairs
     }
-    // addRemovePair(pair, isAdd, isTradeable) {
-    //     const targetArray = isTradeable ? this.tradeablePairs : this.allPairs;
-    //     const otherArray = isTradeable ? this.allPairs : this.tradeablePairs;
 
-    //     if (isAdd) {
-    //         if (isTradeable && !otherArray.includes(pair)) {
-    //             return `Cannot add ${pair} to tradeable pairs. It is not in the all pairs list.`;
-    //         }
-    //         if (!targetArray.includes(pair)) {
-    //             targetArray.push(pair);
-    //             this.savePairsToFile();
-    //             return `Added ${pair} to ${isTradeable ? 'tradeable' : 'all'} pairs.`;
-    //         }
-    //         return `${pair} already exists in ${isTradeable ? 'tradeable' : 'all'} pairs.`;
-    //     } else {
-    //         const index = targetArray.indexOf(pair);
-    //         if (index !== -1) {
-    //             targetArray.splice(index, 1);
-    //             this.savePairsToFile();
-    //             return `Removed ${pair} from ${isTradeable ? 'tradeable' : 'all'} pairs.`;
-    //         }
-    //         return `${pair} not found in ${isTradeable ? 'tradeable' : 'all'} pairs.`;
-    //     }
-    // }
     addRemovePair(pairKey, isAdd, isTradeable) {
         const pair = this.allPairs.find(p => p.key === pairKey);
     

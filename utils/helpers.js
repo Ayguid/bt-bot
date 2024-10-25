@@ -7,10 +7,12 @@ const roundDown = (number, decimals) =>{
     return ( Math.floor( number * Math.pow(10, decimals) ) / Math.pow(10, decimals) );
 }
 const minusPercent = (p, n) => {
-    return n - (n * (p/100));
+    const pInt = parseFloat(n)
+    return pInt - (pInt * (p/100));
 }
 const plusPercent = (p, n) => {
-    return n + (n * (p/100));
+    const pInt = parseFloat(n)
+    return pInt + (pInt * (p/100));
 }
 const timePassed = (start) =>{
     // get the end time 
