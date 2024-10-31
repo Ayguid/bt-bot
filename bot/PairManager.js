@@ -6,52 +6,92 @@ class PairManager {
         this.allPairs = []; // Initialize here
         this.loadPairsFromFile(); // Load pairs during initialization
     }
-
+    //
     loadPairsFromFile() {
+        //console.log('Loading pairs from file');
         try {
             const data = fs.readFileSync(this.pairsFile);
             const pairsData = JSON.parse(data);
             this.allPairs = pairsData || [];
             this.default = { 
                 key: "",
-                decimals: 2,
                 profitMgn: 0.5,
-                belowPrice: 0.25,
+                belowPrice: 0.15,
                 orderQty: 50, // represents second asset in pair, in this case usdt
+                okLoss: -2,
                 tradeable: true
-            }; // Default values for new pairs
+            }; // Default values for new pairs 
         } catch (error) {
             console.error('Error reading pairs file, using default pairs:', error);
             this.allPairs = [{ 
                 key: "BTC_USDT",
-                decimals: 2,
                 profitMgn: 0.5,
-                belowPrice: 0.25,
+                belowPrice: 0.15,
                 orderQty: 50, //_usdt
+                okLoss: -2,
                 tradeable: true
               },
               { 
                 key: "ETH_USDT",
-                decimals: 2,
                 profitMgn: 0.5,
-                belowPrice: 0.25,
+                belowPrice: 0.15,
                 orderQty: 50,
+                okLoss: -2,
                 tradeable: true
               }]; // Default pairs if file read fails
         }
     }
+    //
+    validatePair(object){//move to Pairmanager
+        // const schema = {
+        //     name: value => /^([A-Z][a-z\-]* )+[A-Z][a-z\-]*( \w+\.?)?$/.test(value),
+        //     age: value => parseInt(value) === Number(value) && value >= 18,
+        //     phone: value => /^(\+?\d{1,2}-)?\d{3}-\d{3}-\d{4}$/.test(value)
+        //   };
+        const schema = {
+            key: value => typeof value == "string",
+            profitMgn: value =>parseFloat(value) === Number(value),
+            belowPrice: value =>parseFloat(value) === Number(value),
+            orderQty: value =>parseFloat(value) === Number(value),
+            okLoss: value =>parseFloat(value) === Number(value),
+            tradeable: value => typeof value == "boolean"
+        }
+        schema.key.required = true;
+        schema.profitMgn.required = true;
+        schema.belowPrice.required = true;
+        schema.orderQty.required = true;
+        schema.okLoss.required = true;
+        schema.tradeable.required = true;
 
+        return Object
+        .entries(schema)
+        .map(([key, validate]) => [
+          key,
+          !validate.required || (key in object),
+          validate(object[key])
+        ])
+        .filter(([_, ...tests]) => !tests.every(Boolean))
+        .map(([key, invalid]) => new Error(`${key} is ${invalid ? 'invalid' : 'required'}.`));
+    }
+    //
     getAllPairs() {
-        return this.allPairs; // Method to return all pairs
+        //return this.allPairs; // Method to return all pairs
+        return this.allPairs.filter((pair) => {
+            const pairValidate = this.validatePair(pair);
+            if (pairValidate.length > 0) {
+                console.log('Errors processing pair', pair);
+                for (const { message } of pairValidate) {
+                    console.log(message);
+                }
+                return null;
+            } else {
+                return pair;
+            }
+        });
     }
-
-    getTradeablePairs() {
-        return this.allPairs.filter(pair=> pair.tradeable); // Method to return tradeable pairs
-    }
-
+    //
     addRemovePair(pairKey, isAdd, isTradeable) {
         const pair = this.allPairs.find(p => p.key === pairKey);
-    
         // Adding a new pair to the list (with the given tradeable status)
         if (isAdd) {
             if (!pair) {
@@ -87,10 +127,10 @@ class PairManager {
     
         return `${pairKey} not found in the pairs list.`;
     }
-
+    //
     savePairsToFile() {
         try {
-            const data = JSON.stringify({ pairs: this.allPairs, tradeablePairs: this.tradeablePairs }, null, 2);
+            const data = JSON.stringify(this.allPairs, null, 2);
             fs.writeFileSync(this.pairsFile, data);
         } catch (error) {
             console.error('Error saving pairs to file:', error);

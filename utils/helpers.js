@@ -14,7 +14,7 @@ const plusPercent = (p, n) => {
     const pInt = parseFloat(n)
     return pInt + (pInt * (p/100));
 }
-const timePassed = (start) =>{
+const timePassed = (start) =>{ //1729826486254
     // get the end time 
     let end = Date.now(); 
     // elapsed time in milliseconds 

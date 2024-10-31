@@ -44,8 +44,17 @@ const cancelAndReplace = (pair, side, type, params) => makeApiCall(client.cancel
 const assetDetail = (pair) => makeApiCall(client.assetDetail, { asset: pair });
 const userAsset = (pair) => makeApiCall(client.userAsset, { asset: pair });
 const klines = (pair, interval) => makeApiCall(client.klines, pair, interval, { limit: 120 });
+const exchangeInfo = (params) => makeApiCall(client.exchangeInfo, params);
 
 module.exports = {
     serverTime, fetchMyAccount, avgPrice, tickerPrice, fetchMyOrders, fetchMyTrades,
-    placeOrder, getOrder, cancelOrder, cancelAndReplace, assetDetail, userAsset, klines
+    placeOrder, getOrder, cancelOrder, cancelAndReplace, assetDetail, userAsset, klines, exchangeInfo
 };
+
+
+/*
+
+client.exchangeInfo().then(response => client.logger.log(response.data))
+client.exchangeInfo({ symbol: 'btcusdt' }).then(response => client.logger.log(response.data))
+client.exchangeInfo({ symbols: ['btcusdt', 'BNBUSDT'] }).then(response => client.logger.log(response.data))
+*/
