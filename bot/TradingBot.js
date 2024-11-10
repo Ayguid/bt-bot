@@ -8,7 +8,7 @@ const { getIndicators } = require('../analysis/indicators.js');
 const { shouldBuyOrSell } = require('../analysis/trendCalcs.js');
 const { saveData } = require('../utils/fileManager.js');
 const RateLimitedQueue = require('../classes/RateLimitedQueue.js');
-const TablePrinter = require('../utils/tablePrinter.js');
+const TablePrinter = require('./TablePrinter.js');
 const TelegramBotHandler = require('./TelegramBotHandler.js');
 const PairManager = require('./PairManager.js');
 const { plusPercent, minusPercent, calculateProfit, timePassed } = require('../utils/helpers.js');
@@ -40,8 +40,7 @@ class TradingBot {
     async init() {
         try {
             console.log('Loading Pairs');
-            this.pairManager.loadPairsFromFile(); // Load pairs
-            //this.pairManager.getTradeablePairs();
+            this.pairManager.loadPairsFromFile(); // Load pairs 
             this.telegramBotHandler.initialize();
             // Fetch exchange info only once during initialization
             await this.fetchExchangeInfo();
@@ -99,10 +98,6 @@ class TradingBot {
                 }
             });
         });
-    }
-    //
-    joinPair(pair){
-        return pair.key.replace('_', '');
     }
     // Helper function to determine decimals from exchange filter values
     getDecimals(filterValue) {
@@ -202,8 +197,7 @@ class TradingBot {
             if (sellIsApproved) {
                 console.log('Conditions still favorable for selling. Keeping the order open.');
             }
-            if ( currentProfit < pair.okLoss){ // waited_time > maxWaitingTime ||
-                //console.log(`Waited more than ${maxWaitingTime} hrs selling at market price, or too much loss.`);
+            if ( currentProfit <= pair.okLoss){ // waited_time > maxWaitingTime ||
                 console.log(`Selling at market price, too much loss.`);
                 await this.cancelAndSellToMarketPrice(pair, lastOrder);
             } else {
@@ -227,18 +221,20 @@ class TradingBot {
         if(lastOrder.side == TradingBot.SELL){
             const currentProfit = calculateProfit(currentPrice, minusPercent(pair.profitMgn, lastOrder.price));//should be order price off buy order, this is not accurate
             console.log(`Profit is: ${currentProfit} %`);
-            // if(currentProfit < pair.okLoss){
-            //     console.log('Cancelling and Selling to market price, too much loss.');
-            //     await this.cancelAndSellToMarketPrice(pair, lastOrder);
-            // };
+            if(currentProfit <= pair.okLoss){ //i dont like selling at market price, maybe cancell and resell at current price
+                //console.log('Cancelling and Selling to market price, too much loss.');
+                //await this.cancelAndSellToMarketPrice(pair, lastOrder);
+                console.log('Cancelling and Selling to current price, too much loss.');
+                await this.cancelAndSellToCurrentPrice(pair, lastOrder, currentPrice);
+            };
         }
         else if(lastOrder.side == TradingBot.BUY){
             const orderPriceDiff = calculateProfit(currentPrice, lastOrder.price);//should be order price off buy order, this is not accurate
             console.log(`Price diff with order is: ${orderPriceDiff} %`);
-            // if(!buyIsApproved){
-            //     console.log('Cancelling Buy Order, conditions no longer ok'); 
-            //     await this.cancelOrder(pair, lastOrder);
-            // }
+            if(!buyIsApproved || orderPriceDiff >= 2){
+                console.log('Cancelling Buy Order, conditions no longer ok'); 
+                await this.cancelOrder(pair, lastOrder);
+            }
         }   
         // For example:
         // const updatedOrder = await this.api.getOrderStatus(pair, order.id);
@@ -252,18 +248,17 @@ class TradingBot {
         const balances = await this.getBalances(pair.key);
         //const baseAsset = balances[0];
         const quoteAsset = balances[1];
-        const joinedPair = this.joinPair(pair);//turns ETH_USDT into ETHUSDT
         if(quoteAsset.free < pair.orderQty) {
             console.warn('Not enough balance to place buy order.');
             return;
         }
-        const filters = this.exchangeInfo.symbols.find(pair => pair.symbol == joinedPair).filters;
+        const filters = this.exchangeInfo.symbols.find(symbol => symbol.symbol == pair.joinedPair).filters;
         const priceDecimals = this.getDecimals(filters.find(f => f.filterType === 'PRICE_FILTER').tickSize);
         const qtyDecimals = this.getDecimals(filters.find(f => f.filterType === 'LOT_SIZE').stepSize);
         //
         const buyPrice = minusPercent(pair.belowPrice, currentPrice).toFixed(priceDecimals); //think solution toFixed
         const qty = (pair.orderQty / buyPrice).toFixed(qtyDecimals); //think solution toFixed //currentPrice
-        const order = await this.makeQueuedReq(placeOrder, joinedPair, TradingBot.BUY, 'LIMIT', {price: buyPrice, quantity: qty, timeInForce: 'GTC'});
+        const order = await this.makeQueuedReq(placeOrder, pair.joinedPair, TradingBot.BUY, 'LIMIT', {price: buyPrice, quantity: qty, timeInForce: 'GTC'});
         return order;
     }
     //
@@ -272,32 +267,34 @@ class TradingBot {
         const balances = await this.getBalances(pair.key);
         const baseAsset = balances[0];
         //const quoteAsset = balances[1];
-        const joinedPair = this.joinPair(pair);//turns ETH_USDT into ETHUSDT
         if(baseAsset.free <= 0) {//fix this
             console.warn('Not enough balance to place sell order.');
             return;
         }
         //   
-        const filters = this.exchangeInfo.symbols.find(pair => pair.symbol == joinedPair).filters;
+        const filters = this.exchangeInfo.symbols.find(symbol => symbol.symbol == pair.joinedPair).filters;
         const priceDecimals = this.getDecimals(filters.find(f => f.filterType === 'PRICE_FILTER').tickSize);
         //const qtyDecimals = this.getDecimals(filters.find(f => f.filterType === 'LOT_SIZE').stepSize);
         const sellPrice = plusPercent(pair.profitMgn, lastOrder.price).toFixed(priceDecimals); //later maybe we subtract x%
         //
         const qty = lastOrder.executedQty; //(pair.orderQty / currentPrice).toFixed(pair.decimals);
-        const order = await this.makeQueuedReq(placeOrder, joinedPair, TradingBot.SELL, 'LIMIT', {price: sellPrice, quantity: qty, timeInForce: 'GTC'});
+        const order = await this.makeQueuedReq(placeOrder, pair.joinedPair, TradingBot.SELL, 'LIMIT', {price: sellPrice, quantity: qty, timeInForce: 'GTC'});
         return order;
     }
     //
     async cancelOrder(pair, lastOrder){
-        const joinedPair = this.joinPair(pair);//turns ETH_USDT into ETHUSDT
         //console.log(lastOrder);
-        const order = await this.makeQueuedReq(cancelOrder, joinedPair, lastOrder.orderId);
+        const order = await this.makeQueuedReq(cancelOrder, pair.joinedPair, lastOrder.orderId);
+        return order;
+    }
+    //
+    async cancelAndSellToCurrentPrice(pair, lastOrder, currentPrice){
+        const order = await this.makeQueuedReq(cancelAndReplace, pair.joinedPair, TradingBot.SELL, 'LIMIT', { cancelOrderId: lastOrder.orderId, quantity: lastOrder.origQty, price: currentPrice, timeInForce: 'GTC'});
         return order;
     }
     //
     async cancelAndSellToMarketPrice(pair, lastOrder){
-        const joinedPair = this.joinPair(pair);//turns ETH_USDT into ETHUSDT
-        const order = await this.makeQueuedReq(cancelAndReplace, joinedPair, TradingBot.SELL, 'MARKET', { cancelOrderId: lastOrder.orderId, quantity: lastOrder.origQty});
+        const order = await this.makeQueuedReq(cancelAndReplace, pair.joinedPair, TradingBot.SELL, 'MARKET', { cancelOrderId: lastOrder.orderId, quantity: lastOrder.origQty, timeInForce: 'GTC'});
         return order;
     }
     // Additional method for cancelling orders
@@ -311,13 +308,13 @@ class TradingBot {
     //
     async processPair(pair) {
         console.log('\x1b[33m%s\x1b[0m',`Processing pair: ${pair.key}`);
-        const joinedPair = this.joinPair(pair);//turns ETH_USDT into ETHUSDT
+        pair.joinedPair = pair.key.replace('_', '');//turns ETH_USDT into ETHUSDT, adds it as a property to the pair object
         const isTradeable = pair.tradeable;
         // Get pair kandles, (orders and price) if isTradeable
         const [ohlcv, orders, currentPrice] = await Promise.all([ //parallel method //we fetch balances only inside buy or sell methods, to reduce api calls
-            this.makeQueuedReq(klines, joinedPair, this.config.klinesInterval),
-            isTradeable ? this.makeQueuedReq(fetchMyOrders, joinedPair) : false,
-            isTradeable ? this.makeQueuedReq(tickerPrice, joinedPair) : false,
+            this.makeQueuedReq(klines, pair.joinedPair, this.config.klinesInterval),
+            isTradeable ? this.makeQueuedReq(fetchMyOrders, pair.joinedPair) : false,
+            isTradeable ? this.makeQueuedReq(tickerPrice, pair.joinedPair) : false,
             //isTradeable ? this.getBalances(pair) : false,
         ]);
         //if error in candles exit
@@ -351,7 +348,7 @@ class TradingBot {
         //return result
         console.log('\x1b[33m%s\x1b[0m','----------------');
         return {
-            pair,
+            ...pair,
             indicators,
             analysis,
             orders,

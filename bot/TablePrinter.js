@@ -44,7 +44,7 @@ class TablePrinter {
     
     formatRowData(element) {
         return {
-            pair: element.pair.key,
+            pair: element.key,
             // rsi: element.indicators?.current_rsi.toFixed(2),
             // stochRsi: element.indicators?.current_stoch_rsi?.k?.toFixed(2),
             // macd: element.indicators?.current_macd?.histogram.toFixed(4),
@@ -56,7 +56,7 @@ class TablePrinter {
             volumeTrend: element.analysis?.trend.volumeTrend,
             signal: element.analysis.signal,
             overallPriceChange: element.analysis.trend.overallPriceChange,
-            tradeable: element.pair.tradeable || '-',
+            tradeable: element.tradeable || '-',
             date: element.date
         };
     }

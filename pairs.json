@@ -3,7 +3,7 @@
     "key": "BTC_USDT",
     "profitMgn": 0.5,
     "belowPrice": 0.15,
-    "orderQty": 50,
+    "orderQty": 500,
     "okLoss": -2.5,
     "tradeable": true
   },
@@ -11,7 +11,7 @@
     "key": "ETH_USDT",
     "profitMgn": 0.5,
     "belowPrice": 0.15,
-    "orderQty": 50,
+    "orderQty": 500,
     "okLoss": -2.5,
     "tradeable": true
   },
@@ -29,7 +29,7 @@
     "belowPrice": 0.15,
     "orderQty": 50,
     "okLoss": -2.5,
-    "tradeable": true
+    "tradeable": false
   },
   {
     "key": "AVAX_USDT",
@@ -93,15 +93,7 @@
     "belowPrice": 0.15,
     "orderQty": 50,
     "okLoss": -2.5,
-    "tradeable": false
-  },
-  {
-    "key": "FIO_USDT",
-    "profitMgn": 0.5,
-    "belowPrice": 0.15,
-    "orderQty": 50,
-    "okLoss": -2.5,
-    "tradeable": false
+    "tradeable": true
   },
   {
     "key": "FTM_USDT",
@@ -117,6 +109,14 @@
     "belowPrice": 0.15,
     "orderQty": 50,
     "okLoss": -2.5,
+    "tradeable": false
+  },
+  {
+    "key": "FET_USDT",
+    "profitMgn": 0.5,
+    "belowPrice": 0.15,
+    "orderQty": 50,
+    "okLoss": -2,
     "tradeable": false
   }
 ]
