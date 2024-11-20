@@ -5,7 +5,8 @@
     "belowPrice": 0.15,
     "orderQty": 500,
     "okLoss": -2.5,
-    "tradeable": true
+    "tradeable": true,
+    "joinedPair": "BTCUSDT"
   },
   {
     "key": "ETH_USDT",
@@ -13,7 +14,8 @@
     "belowPrice": 0.15,
     "orderQty": 500,
     "okLoss": -2.5,
-    "tradeable": true
+    "tradeable": true,
+    "joinedPair": "ETHUSDT"
   },
   {
     "key": "SOL_USDT",
@@ -21,7 +23,8 @@
     "belowPrice": 0.15,
     "orderQty": 50,
     "okLoss": -2.5,
-    "tradeable": true
+    "tradeable": true,
+    "joinedPair": "SOLUSDT"
   },
   {
     "key": "BNB_USDT",
@@ -29,7 +32,8 @@
     "belowPrice": 0.15,
     "orderQty": 50,
     "okLoss": -2.5,
-    "tradeable": false
+    "tradeable": false,
+    "joinedPair": "BNBUSDT"
   },
   {
     "key": "AVAX_USDT",
@@ -37,7 +41,8 @@
     "belowPrice": 0.15,
     "orderQty": 50,
     "okLoss": -2.5,
-    "tradeable": false
+    "tradeable": true,
+    "joinedPair": "AVAXUSDT"
   },
   {
     "key": "ICP_USDT",
@@ -45,7 +50,8 @@
     "belowPrice": 0.15,
     "orderQty": 50,
     "okLoss": -2.5,
-    "tradeable": false
+    "tradeable": false,
+    "joinedPair": "ICPUSDT"
   },
   {
     "key": "COTI_USDT",
@@ -53,7 +59,8 @@
     "belowPrice": 0.15,
     "orderQty": 50,
     "okLoss": -2.5,
-    "tradeable": false
+    "tradeable": false,
+    "joinedPair": "COTIUSDT"
   },
   {
     "key": "TURBO_USDT",
@@ -61,7 +68,8 @@
     "belowPrice": 0.15,
     "orderQty": 50,
     "okLoss": -2.5,
-    "tradeable": false
+    "tradeable": false,
+    "joinedPair": "TURBOUSDT"
   },
   {
     "key": "LINK_USDT",
@@ -69,7 +77,8 @@
     "belowPrice": 0.15,
     "orderQty": 50,
     "okLoss": -2.5,
-    "tradeable": true
+    "tradeable": false,
+    "joinedPair": "LINKUSDT"
   },
   {
     "key": "1INCH_USDT",
@@ -77,7 +86,8 @@
     "belowPrice": 0.15,
     "orderQty": 50,
     "okLoss": -2.5,
-    "tradeable": false
+    "tradeable": false,
+    "joinedPair": "1INCHUSDT"
   },
   {
     "key": "PEOPLE_USDT",
@@ -85,7 +95,8 @@
     "belowPrice": 0.15,
     "orderQty": 50,
     "okLoss": -2.5,
-    "tradeable": false
+    "tradeable": false,
+    "joinedPair": "PEOPLEUSDT"
   },
   {
     "key": "DOGE_USDT",
@@ -93,7 +104,8 @@
     "belowPrice": 0.15,
     "orderQty": 50,
     "okLoss": -2.5,
-    "tradeable": true
+    "tradeable": true,
+    "joinedPair": "DOGEUSDT"
   },
   {
     "key": "FTM_USDT",
@@ -101,7 +113,8 @@
     "belowPrice": 0.15,
     "orderQty": 50,
     "okLoss": -2.5,
-    "tradeable": false
+    "tradeable": false,
+    "joinedPair": "FTMUSDT"
   },
   {
     "key": "SHIB_USDT",
@@ -109,7 +122,8 @@
     "belowPrice": 0.15,
     "orderQty": 50,
     "okLoss": -2.5,
-    "tradeable": false
+    "tradeable": false,
+    "joinedPair": "SHIBUSDT"
   },
   {
     "key": "FET_USDT",
@@ -117,6 +131,7 @@
     "belowPrice": 0.15,
     "orderQty": 50,
     "okLoss": -2,
-    "tradeable": false
+    "tradeable": false,
+    "joinedPair": "FETUSDT"
   }
 ]

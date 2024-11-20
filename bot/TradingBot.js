@@ -225,7 +225,7 @@ class TradingBot {
                 //console.log('Cancelling and Selling to market price, too much loss.');
                 //await this.cancelAndSellToMarketPrice(pair, lastOrder);
                 console.log('Cancelling and Selling to current price, too much loss.');
-                await this.cancelAndSellToCurrentPrice(pair, lastOrder, currentPrice);
+                //await this.cancelAndSellToCurrentPrice(pair, lastOrder, currentPrice);
             };
         }
         else if(lastOrder.side == TradingBot.BUY){
@@ -256,8 +256,8 @@ class TradingBot {
         const priceDecimals = this.getDecimals(filters.find(f => f.filterType === 'PRICE_FILTER').tickSize);
         const qtyDecimals = this.getDecimals(filters.find(f => f.filterType === 'LOT_SIZE').stepSize);
         //
-        const buyPrice = minusPercent(pair.belowPrice, currentPrice).toFixed(priceDecimals); //think solution toFixed
-        const qty = (pair.orderQty / buyPrice).toFixed(qtyDecimals); //think solution toFixed //currentPrice
+        const buyPrice = minusPercent(pair.belowPrice, currentPrice).toFixed(priceDecimals); 
+        const qty = (pair.orderQty / buyPrice).toFixed(qtyDecimals);
         const order = await this.makeQueuedReq(placeOrder, pair.joinedPair, TradingBot.BUY, 'LIMIT', {price: buyPrice, quantity: qty, timeInForce: 'GTC'});
         return order;
     }
