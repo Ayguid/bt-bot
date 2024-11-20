@@ -139,8 +139,8 @@ let btcHold = false;  // Starting with BTC
 let highestPrice = 0;
 let lowestPrice = 0;
 let stopLossActive = false;
-const TRAILING_PERCENT = 0.0005;  // 2%
-const STOP_LOSS_PERCENT = 0.1;  // 0.5%
+const TRAILING_PERCENT = 0.005;  // 2%
+const STOP_LOSS_PERCENT = 0.0025;  // 0.5%
 const MAINPAIR = 'BTCFDUSD';
 let last_order = '';
 
@@ -174,7 +174,7 @@ const buyBTC = async (pair, price, qty) => {
   stopLossActive = true;
 };
 
-const DELAY = 4000;
+const DELAY = 60000;
 const botLoop = async ()=> {
     //
     while(!exit_loop){
