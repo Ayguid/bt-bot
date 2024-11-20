@@ -1,12 +1,11 @@
 //LIBS 
 //const EventEmitter = require('node:events');
-//KEYS AND URL
-require('dotenv').config(); // env config
+//require('dotenv').config(); // env config
 // BINANCE CONECTOR
-const TESTNET = process.env.BINANCE_API_SECRET_TEST || '';
+const TESTNET = process.env.TESTNET;
 const { Spot } = require('@binance/connector'); //https://github.com/binance/binance-connector-node/
 let apiKey , apiSecret, client;
-if(TESTNET){
+if(TESTNET == 'true'){
     const TEST_URL = 'https://testnet.binance.vision/';
     apiKey = process.env.BINANCE_API_KEY_TEST || '';
     apiSecret = process.env.BINANCE_API_SECRET_TEST || '';
@@ -14,7 +13,7 @@ if(TESTNET){
 }else{
     apiKey = process.env.BINANCE_API_KEY || '';
     apiSecret = process.env.BINANCE_API_SECRET || '';
-    client = new Spot(apiKey, apiSecret); //https://docs.binance.us/#klines-websocket , { baseURL: TEST_URL}
+    client = new Spot(apiKey, apiSecret);
 }
 
 const DEBUG = false;
@@ -32,7 +31,6 @@ const fetchMyAccount = async () => {
 const avgPrice = async (pair) => {
     return await client.avgPrice(pair).then(response => {
         if(DEBUG) client.logger.log(response.data);
-        //return Number(response.data.price);
         return response.data;
     }).catch(error => {
         if(DEBUG) client.logger.error(error); 
@@ -122,7 +120,7 @@ const assetDetail = async (pair) => {
     });
 }
 const klines = async (pair, interval) => {
-    return await client.klines(pair, interval, { limit: 50 }).then(response => {
+    return await client.klines(pair, interval, { limit: 120 }).then(response => {
         if(DEBUG) client.logger.log(response.data);
         return response.data;
     })

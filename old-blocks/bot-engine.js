@@ -4,9 +4,9 @@ In its logic it has a sell mentality, to be countinued,,,
 */
 
 //helpers
-const { fetchMyAccount, avgPrice, tickerPrice, fetchMyOrders, fetchMyTrades, placeOrder, getOrder, cancelAndReplace, cancelOrder } = require('./binance-spot.js');
+const { fetchMyAccount, avgPrice, tickerPrice, fetchMyOrders, fetchMyTrades, placeOrder, getOrder, cancelAndReplace, cancelOrder } = require('../scripts/binance-spot.js');
 //const { fetchMyAccount, avgPrice, tickerPrice, fetchMyOrders, placeOrder, cancelAndReplace } = require('./binance-mock.js');
-const { percent } = require('../utils//helpers.js');
+const { percent } = require('../utils/helpers.js');
 //GLOBAL VARS END
 
 class Bot {
