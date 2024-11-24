@@ -5,6 +5,7 @@
     "belowPrice": 0.15,
     "orderQty": 500,
     "okLoss": -2.5,
+    "okDiff": 2,
     "tradeable": true,
     "joinedPair": "BTCUSDT"
   },
@@ -14,6 +15,7 @@
     "belowPrice": 0.15,
     "orderQty": 500,
     "okLoss": -2.5,
+    "okDiff": 2,
     "tradeable": true,
     "joinedPair": "ETHUSDT"
   },
@@ -23,6 +25,7 @@
     "belowPrice": 0.15,
     "orderQty": 50,
     "okLoss": -2.5,
+    "okDiff": 2,
     "tradeable": true,
     "joinedPair": "SOLUSDT"
   },
@@ -32,17 +35,9 @@
     "belowPrice": 0.15,
     "orderQty": 50,
     "okLoss": -2.5,
+    "okDiff": 2,
     "tradeable": false,
     "joinedPair": "BNBUSDT"
-  },
-  {
-    "key": "AVAX_USDT",
-    "profitMgn": 0.5,
-    "belowPrice": 0.15,
-    "orderQty": 50,
-    "okLoss": -2.5,
-    "tradeable": true,
-    "joinedPair": "AVAXUSDT"
   },
   {
     "key": "ICP_USDT",
@@ -50,6 +45,7 @@
     "belowPrice": 0.15,
     "orderQty": 50,
     "okLoss": -2.5,
+    "okDiff": 2,
     "tradeable": false,
     "joinedPair": "ICPUSDT"
   },
@@ -59,6 +55,7 @@
     "belowPrice": 0.15,
     "orderQty": 50,
     "okLoss": -2.5,
+    "okDiff": 2,
     "tradeable": false,
     "joinedPair": "COTIUSDT"
   },
@@ -68,6 +65,7 @@
     "belowPrice": 0.15,
     "orderQty": 50,
     "okLoss": -2.5,
+    "okDiff": 2,
     "tradeable": false,
     "joinedPair": "TURBOUSDT"
   },
@@ -77,7 +75,8 @@
     "belowPrice": 0.15,
     "orderQty": 50,
     "okLoss": -2.5,
-    "tradeable": false,
+    "okDiff": 2,
+    "tradeable": true,
     "joinedPair": "LINKUSDT"
   },
   {
@@ -86,6 +85,7 @@
     "belowPrice": 0.15,
     "orderQty": 50,
     "okLoss": -2.5,
+    "okDiff": 2,
     "tradeable": false,
     "joinedPair": "1INCHUSDT"
   },
@@ -95,6 +95,7 @@
     "belowPrice": 0.15,
     "orderQty": 50,
     "okLoss": -2.5,
+    "okDiff": 2,
     "tradeable": false,
     "joinedPair": "PEOPLEUSDT"
   },
@@ -104,6 +105,7 @@
     "belowPrice": 0.15,
     "orderQty": 50,
     "okLoss": -2.5,
+    "okDiff": 2,
     "tradeable": true,
     "joinedPair": "DOGEUSDT"
   },
@@ -113,6 +115,7 @@
     "belowPrice": 0.15,
     "orderQty": 50,
     "okLoss": -2.5,
+    "okDiff": 2,
     "tradeable": false,
     "joinedPair": "FTMUSDT"
   },
@@ -122,6 +125,7 @@
     "belowPrice": 0.15,
     "orderQty": 50,
     "okLoss": -2.5,
+    "okDiff": 2,
     "tradeable": false,
     "joinedPair": "SHIBUSDT"
   },
@@ -130,7 +134,8 @@
     "profitMgn": 0.5,
     "belowPrice": 0.15,
     "orderQty": 50,
-    "okLoss": -2,
+    "okLoss": -2.5,
+    "okDiff": 2,
     "tradeable": false,
     "joinedPair": "FETUSDT"
   }

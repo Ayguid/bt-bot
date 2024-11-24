@@ -31,4 +31,3 @@ placeOrder('ADAUSDC', 'BUY', 'LIMIT', {price: 0.5193, quantity: 100, timeInForce
     console.log(res.balances.find(asset => asset.asset == 'USDT'));
     //console.log(res);
 })()
-

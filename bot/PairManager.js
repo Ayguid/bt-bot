@@ -19,6 +19,7 @@ class PairManager {
                 belowPrice: 0.15,
                 orderQty: 50, // represents second asset in pair, in this case usdt
                 okLoss: -2,
+                okDiff: 2,
                 tradeable: true
             }; // Default values for new pairs 
         } catch (error) {
@@ -29,6 +30,7 @@ class PairManager {
                 belowPrice: 0.15,
                 orderQty: 50, //_usdt
                 okLoss: -2,
+                okDiff: 2,
                 tradeable: true
               },
               { 
@@ -37,6 +39,7 @@ class PairManager {
                 belowPrice: 0.15,
                 orderQty: 50,
                 okLoss: -2,
+                okDiff: 2,
                 tradeable: true
               }]; // Default pairs if file read fails
         }
@@ -54,6 +57,7 @@ class PairManager {
             belowPrice: value =>parseFloat(value) === Number(value),
             orderQty: value =>parseFloat(value) === Number(value),
             okLoss: value =>parseFloat(value) === Number(value),
+            okDiff: value =>parseFloat(value) === Number(value),
             tradeable: value => typeof value == "boolean"
         }
         schema.key.required = true;
@@ -61,6 +65,7 @@ class PairManager {
         schema.belowPrice.required = true;
         schema.orderQty.required = true;
         schema.okLoss.required = true;
+        schema.okDiff.required = true;
         schema.tradeable.required = true;
 
         return Object

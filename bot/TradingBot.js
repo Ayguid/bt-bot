@@ -3,16 +3,16 @@ require('dotenv').config(); // Environment variables
 const path = require('path');
 const { execSync } = require('child_process'); // To run system commands for time synchronization
 // Local project modules
-const { serverTime, klines, fetchMyOrders, tickerPrice, userAsset, fetchMyAccount, placeOrder, cancelOrder, cancelAndReplace, exchangeInfo } = require('../utils/binance-spot.js');
-const { getIndicators } = require('../analysis/indicators.js');
-const { shouldBuyOrSell } = require('../analysis/trendCalcs.js');
-const { saveData } = require('../utils/fileManager.js');
-const RateLimitedQueue = require('../classes/RateLimitedQueue.js');
-const TablePrinter = require('./TablePrinter.js');
-const TelegramBotHandler = require('./TelegramBotHandler.js');
-const PairManager = require('./PairManager.js');
-const { plusPercent, minusPercent, calculateProfit, timePassed } = require('../utils/helpers.js');
-const config = require('../config.js'); // Configuration file
+const { serverTime, klines, fetchMyOrders, tickerPrice, userAsset, fetchMyAccount, placeOrder, cancelOrder, cancelAndReplace, exchangeInfo } = require('../utils/binance-spot');
+const { getIndicators } = require('../analysis/indicators');
+const { shouldBuyOrSell } = require('../analysis/trendCalcs');
+const { saveData } = require('../utils/fileManager');
+const RateLimitedQueue = require('../classes/RateLimitedQueue');
+const TablePrinter = require('./TablePrinter');
+const TelegramBotHandler = require('./TelegramBotHandler');
+const PairManager = require('./PairManager');
+const { plusPercent, minusPercent, calculateProfit, timePassed } = require('../utils/helpers');
+const config = require('../config'); // Configuration file
 
 class TradingBot {
     //ORDER_SIDES
@@ -231,8 +231,8 @@ class TradingBot {
         else if(lastOrder.side == TradingBot.BUY){
             const orderPriceDiff = calculateProfit(currentPrice, lastOrder.price);//should be order price off buy order, this is not accurate
             console.log(`Price diff with order is: ${orderPriceDiff} %`);
-            if(!buyIsApproved || orderPriceDiff >= 2){
-                console.log('Cancelling Buy Order, conditions no longer ok'); 
+            if(!buyIsApproved || orderPriceDiff >= pair.okDiff){
+                console.log(`Cancelling Buy Order, conditions no longer ok, price went up by ${pair.okDiff} %`); 
                 await this.cancelOrder(pair, lastOrder);
             }
         }   
