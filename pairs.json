@@ -86,7 +86,7 @@
     "orderQty": 50,
     "okLoss": -2.5,
     "okDiff": 2,
-    "tradeable": false,
+    "tradeable": true,
     "joinedPair": "1INCHUSDT"
   },
   {
@@ -116,7 +116,7 @@
     "orderQty": 50,
     "okLoss": -2.5,
     "okDiff": 2,
-    "tradeable": false,
+    "tradeable": true,
     "joinedPair": "FTMUSDT"
   },
   {
@@ -136,7 +136,7 @@
     "orderQty": 50,
     "okLoss": -2.5,
     "okDiff": 2,
-    "tradeable": false,
+    "tradeable": true,
     "joinedPair": "FETUSDT"
   }
 ]

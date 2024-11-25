@@ -1,11 +1,12 @@
 require('dotenv').config(); // Environment variables
 // Node.js built-in modules
 const path = require('path');
+const crypto = require("crypto");
 const { execSync } = require('child_process'); // To run system commands for time synchronization
 // Local project modules
 const { serverTime, klines, fetchMyOrders, tickerPrice, userAsset, fetchMyAccount, placeOrder, cancelOrder, cancelAndReplace, exchangeInfo } = require('../utils/binance-spot');
 const { getIndicators } = require('../analysis/indicators');
-const { shouldBuyOrSell } = require('../analysis/trendCalcs');
+const { shouldBuyOrSell } = require('../analysis/trendCalcs-3');
 const { saveData } = require('../utils/fileManager');
 const RateLimitedQueue = require('../classes/RateLimitedQueue');
 const TablePrinter = require('./TablePrinter');
@@ -106,6 +107,10 @@ class TradingBot {
         const parts = trimmedValue.split('.');
 
         return parts[1] ? parts[1].length : 0;
+    }
+    newBotOrderId(){
+        const id = crypto.randomBytes(16).toString("hex");
+        return 'bot-' + id;
     }
     // New method to fetch and store exchangeInfo only once
     async fetchExchangeInfo() {
@@ -222,9 +227,9 @@ class TradingBot {
             const currentProfit = calculateProfit(currentPrice, minusPercent(pair.profitMgn, lastOrder.price));//should be order price off buy order, this is not accurate
             console.log(`Profit is: ${currentProfit} %`);
             if(currentProfit <= pair.okLoss){ //i dont like selling at market price, maybe cancell and resell at current price
-                //console.log('Cancelling and Selling to market price, too much loss.');
-                //await this.cancelAndSellToMarketPrice(pair, lastOrder);
-                console.log('Cancelling and Selling to current price, too much loss.');
+                console.log('Cancelling and Selling to market price, too much loss.');
+                await this.cancelAndSellToMarketPrice(pair, lastOrder);
+                //console.log('Cancelling and Selling to current price, too much loss.');
                 //await this.cancelAndSellToCurrentPrice(pair, lastOrder, currentPrice);
             };
         }
@@ -258,7 +263,7 @@ class TradingBot {
         //
         const buyPrice = minusPercent(pair.belowPrice, currentPrice).toFixed(priceDecimals); 
         const qty = (pair.orderQty / buyPrice).toFixed(qtyDecimals);
-        const order = await this.makeQueuedReq(placeOrder, pair.joinedPair, TradingBot.BUY, 'LIMIT', {price: buyPrice, quantity: qty, timeInForce: 'GTC'});
+        const order = await this.makeQueuedReq(placeOrder, pair.joinedPair, TradingBot.BUY, 'LIMIT', {price: buyPrice, quantity: qty, timeInForce: 'GTC', newClientOrderId: this.newBotOrderId()});
         return order;
     }
     //
@@ -278,7 +283,7 @@ class TradingBot {
         const sellPrice = plusPercent(pair.profitMgn, lastOrder.price).toFixed(priceDecimals); //later maybe we subtract x%
         //
         const qty = lastOrder.executedQty; //(pair.orderQty / currentPrice).toFixed(pair.decimals);
-        const order = await this.makeQueuedReq(placeOrder, pair.joinedPair, TradingBot.SELL, 'LIMIT', {price: sellPrice, quantity: qty, timeInForce: 'GTC'});
+        const order = await this.makeQueuedReq(placeOrder, pair.joinedPair, TradingBot.SELL, 'LIMIT', {price: sellPrice, quantity: qty, timeInForce: 'GTC', newClientOrderId: this.newBotOrderId()});
         return order;
     }
     //
@@ -294,7 +299,7 @@ class TradingBot {
     }
     //
     async cancelAndSellToMarketPrice(pair, lastOrder){
-        const order = await this.makeQueuedReq(cancelAndReplace, pair.joinedPair, TradingBot.SELL, 'MARKET', { cancelOrderId: lastOrder.orderId, quantity: lastOrder.origQty, timeInForce: 'GTC'});
+        const order = await this.makeQueuedReq(cancelAndReplace, pair.joinedPair, TradingBot.SELL, 'MARKET', { cancelOrderId: lastOrder.orderId, quantity: lastOrder.origQty});
         return order;
     }
     // Additional method for cancelling orders
