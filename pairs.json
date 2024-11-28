@@ -66,7 +66,7 @@
     "orderQty": 50,
     "okLoss": -2.5,
     "okDiff": 2,
-    "tradeable": false,
+    "tradeable": true,
     "joinedPair": "TURBOUSDT"
   },
   {

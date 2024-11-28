@@ -11,18 +11,21 @@ console.log('Type in terminal')
 rl.on('line', (input) => {
     console.log(`Received: ${input}`);
     if(input.startsWith('cmd')){
-        executeCommand(input);
+        let substr = input.substr(input.indexOf(" ")+1); //removes cmd from string
+        executeCommand(substr);
     }
 });
 
-const executeCommand = async (command) =>{
+const executeCommand = async (text) =>{
     //console.log(command);
-    const commandArray = command.split(" ");
+    //const commandArray = command.split(" ");
+    const [command, ...args] = text.split(' ');
+    console.log(command);
     const commands = {
-        getBalance: () => commandArray[2] ? getBalance(commandArray[2]) : getBalance(),
-        assetDetail: () => asset(commandArray[2])
+        getBalance: () => args[0] ? getBalance(args[0]) : getBalance(),
+        assetDetail: () => asset(commandArray[0])
     };
-    const action = commands[commandArray[1]];
+    const action = commands[command];
     return action ? await action() : console.log('Unknown command.');
 }
 

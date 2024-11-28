@@ -24,6 +24,7 @@ class TradingBot {
     static PARTIALLY_FILLED = 'PARTIALLY_FILLED';
     static CANCELED = 'CANCELED';
     static NEW = 'NEW';
+    static EXPIRED = 'EXPIRED';
 
     constructor() {
         this.config = config; // Use the imported config
@@ -151,10 +152,26 @@ class TradingBot {
                 case TradingBot.CANCELED:
                     await this.considerNewOrder(pair, lastOrder, currentPrice, buyIsApproved, sellIsApproved);
                     break;
+                case TradingBot.EXPIRED:
+                    await this.handleExpiredOrder(pair, lastOrder, currentPrice, buyIsApproved, sellIsApproved);
+                    break;
                 default:
                     console.log(`Unhandled order status: ${lastOrder.status}. Please review.`);
             }
         }
+    }
+    //
+    async handleExpiredOrder(pair, lastOrder){
+        if (lastOrder.side === TradingBot.SELL) {
+            console.log('Last sell order expired.');
+            await this.cancelAndSellToMarketPrice(pair, lastOrder);
+            //await this.placeBuyOrder(pair, currentPrice);
+        } else if (lastOrder.side === TradingBot.BUY) { //order.side === TradingBot.BUY && sellIsApproved
+            console.log('Last buy order expired.');
+            //await this.placeSellOrder(pair, lastOrder);
+        } else {
+            console.log('Filled order exists, but current conditions not favorable for new order.');
+        }    
     }
     //
     async considerNewOrder(pair, lastOrder = false, currentPrice, buyIsApproved, sellIsApproved) {
@@ -202,7 +219,7 @@ class TradingBot {
             if (sellIsApproved) {
                 console.log('Conditions still favorable for selling. Keeping the order open.');
             }
-            if ( currentProfit <= pair.okLoss){ // waited_time > maxWaitingTime ||
+            if (currentProfit <= pair.okLoss){ // waited_time > maxWaitingTime ||
                 console.log(`Selling at market price, too much loss.`);
                 await this.cancelAndSellToMarketPrice(pair, lastOrder);
             } else {
@@ -237,7 +254,7 @@ class TradingBot {
             const orderPriceDiff = calculateProfit(currentPrice, lastOrder.price);//should be order price off buy order, this is not accurate
             console.log(`Price diff with order is: ${orderPriceDiff} %`);
             if(!buyIsApproved || orderPriceDiff >= pair.okDiff){
-                console.log(`Cancelling Buy Order, conditions no longer ok, price went up by ${pair.okDiff} %`); 
+                console.log(`Cancelling Buy Order, conditions no longer ok, price went up by ${orderPriceDiff} %`); 
                 await this.cancelOrder(pair, lastOrder);
             }
         }   
