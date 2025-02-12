@@ -110,16 +110,6 @@
     "joinedPair": "DOGEUSDT"
   },
   {
-    "key": "FTM_USDT",
-    "profitMgn": 0.5,
-    "belowPrice": 0.15,
-    "orderQty": 50,
-    "okLoss": -2.5,
-    "okDiff": 2,
-    "tradeable": true,
-    "joinedPair": "FTMUSDT"
-  },
-  {
     "key": "SHIB_USDT",
     "profitMgn": 0.5,
     "belowPrice": 0.15,

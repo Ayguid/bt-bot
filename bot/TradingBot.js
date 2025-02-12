@@ -6,7 +6,7 @@ const { execSync } = require('child_process'); // To run system commands for tim
 // Local project modules
 const { serverTime, klines, fetchMyOrders, tickerPrice, userAsset, fetchMyAccount, placeOrder, cancelOrder, cancelAndReplace, exchangeInfo } = require('../utils/binance-spot');
 const { getIndicators } = require('../analysis/indicators');
-const { shouldBuyOrSell } = require('../analysis/trendCalcs-3');
+const { shouldBuyOrSell } = require('../analysis/trendCalcs-deep');
 const { saveData } = require('../utils/fileManager');
 const RateLimitedQueue = require('../classes/RateLimitedQueue');
 const TablePrinter = require('./TablePrinter');
@@ -361,7 +361,8 @@ class TradingBot {
         }
         //console.warn(`currentPrice:`, currentPrice.price);
         // Analysis
-        const indicators = getIndicators(ohlcv);
+        const indicators = await getIndicators(ohlcv);
+        //console.log(ohlcv)
         const analysis = shouldBuyOrSell(indicators, ohlcv, this.config.analysisWindow); //if 2hr timeframe for candles changes, change the 12 inside analysisWindow to = 24/timeframe
         //
         this.sendGroupChatAlert(pair.key, analysis);// the method itself checks for time passed between alerts and analysis type
