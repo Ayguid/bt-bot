@@ -1,7 +1,5 @@
 const TelegramBot = require('node-telegram-bot-api');
-//fix for some networks blocking the req
-const axios = require('axios');
-//
+
 class TelegramBotHandler {
     constructor(config, handleCommandCallback) {
         this.config = config;
@@ -18,14 +16,10 @@ class TelegramBotHandler {
         if (!token) {
             throw new Error('Telegram bot token not set in environment variables.');
         }
-        this.tBot = new TelegramBot(token, { polling: true, request: {
-            family: 4,  // Force IPv4
-            timeout: 30000
-        }});
-        this.tBot.on("polling_error", (msg) => console.log(msg));
+        this.tBot = new TelegramBot(token, { polling: true });
         this.tBot.on('message', this.handleTelegramMessage.bind(this));
     }
-    
+
     async handleTelegramMessage(msg) {
         if (msg.from.id !== Number(process.env.TELEGRAM_MY_ID)) return;
         await this.tBot.sendMessage(process.env.TELEGRAM_MY_ID, `Received your message '${msg.text}'`);
@@ -36,7 +30,7 @@ class TelegramBotHandler {
 
     async sendGroupChatAlert(pair, analysis) {
         if (!this.config.telegramBotEnabled) {
-            console.log(`Telegram bot is disabled, not sending alert for ${pair}.`);
+            console.log(`Telegram bot is disabled, not sending ${signal} alert for ${pair}.`);
             return; // Exit early if the Telegram bot is disabled
         }
         const normalizedSignal = analysis.signal.toLowerCase();

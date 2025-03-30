@@ -1,31 +1,132 @@
-{
-  "pairs": [
-    "BTC_USDT",
-    "ETH_USDT",
-    "FET_USDT",
-    "FTM_USDT",
-    "FIO_USDT",
-    "ICP_USDT",
-    "COTI_USDT",
-    "KP3R_USDT",
-    "AVAX_USDT",
-    "LINK_USDT",
-    "MATIC_USDT",
-    "FLOKI_USDT",
-    "PEPE_USDT",
-    "WIF_USDT",
-    "BONK_USDT",
-    "PEOPLE_USDT",
-    "TURBO_USDT",
-    "SOL_USDT",
-    "1INCH_USDT",
-    "ARKM_USDT",
-    "BURGER_USDT",
-    "DOGS_USDT"
-  ],
-  "tradeablePairs": [
-    "BTC_USDT",
-    "ETH_USDT",
-    "FET_USDT"
-  ]
-}
+[
+  {
+    "key": "BTC_USDT",
+    "profitMgn": 0.5,
+    "belowPrice": 0.1,
+    "orderQty": 50,
+    "okLoss": -2.5,
+    "okDiff": 2,
+    "tradeable": true,
+    "joinedPair": "BTCUSDT"
+  },
+  {
+    "key": "ETH_USDT",
+    "profitMgn": 0.5,
+    "belowPrice": 0.1,
+    "orderQty": 50,
+    "okLoss": -2.5,
+    "okDiff": 2,
+    "tradeable": true,
+    "joinedPair": "ETHUSDT"
+  },
+  {
+    "key": "SOL_USDT",
+    "profitMgn": 0.5,
+    "belowPrice": 0.1,
+    "orderQty": 50,
+    "okLoss": -2.5,
+    "okDiff": 2,
+    "tradeable": true,
+    "joinedPair": "SOLUSDT"
+  },
+  {
+    "key": "BNB_USDT",
+    "profitMgn": 0.5,
+    "belowPrice": 0.1,
+    "orderQty": 50,
+    "okLoss": -2.5,
+    "okDiff": 2,
+    "tradeable": false,
+    "joinedPair": "BNBUSDT"
+  },
+  {
+    "key": "ICP_USDT",
+    "profitMgn": 0.5,
+    "belowPrice": 0.1,
+    "orderQty": 50,
+    "okLoss": -2.5,
+    "okDiff": 2,
+    "tradeable": false,
+    "joinedPair": "ICPUSDT"
+  },
+  {
+    "key": "COTI_USDT",
+    "profitMgn": 0.5,
+    "belowPrice": 0.1,
+    "orderQty": 50,
+    "okLoss": -2.5,
+    "okDiff": 2,
+    "tradeable": false,
+    "joinedPair": "COTIUSDT"
+  },
+  {
+    "key": "TURBO_USDT",
+    "profitMgn": 0.5,
+    "belowPrice": 0.1,
+    "orderQty": 50,
+    "okLoss": -2.5,
+    "okDiff": 2,
+    "tradeable": true,
+    "joinedPair": "TURBOUSDT"
+  },
+  {
+    "key": "LINK_USDT",
+    "profitMgn": 0.5,
+    "belowPrice": 0.1,
+    "orderQty": 50,
+    "okLoss": -2.5,
+    "okDiff": 2,
+    "tradeable": true,
+    "joinedPair": "LINKUSDT"
+  },
+  {
+    "key": "1INCH_USDT",
+    "profitMgn": 0.5,
+    "belowPrice": 0.1,
+    "orderQty": 50,
+    "okLoss": -2.5,
+    "okDiff": 2,
+    "tradeable": true,
+    "joinedPair": "1INCHUSDT"
+  },
+  {
+    "key": "PEOPLE_USDT",
+    "profitMgn": 0.5,
+    "belowPrice": 0.1,
+    "orderQty": 50,
+    "okLoss": -2.5,
+    "okDiff": 2,
+    "tradeable": false,
+    "joinedPair": "PEOPLEUSDT"
+  },
+  {
+    "key": "DOGE_USDT",
+    "profitMgn": 0.5,
+    "belowPrice": 0.1,
+    "orderQty": 50,
+    "okLoss": -2.5,
+    "okDiff": 2,
+    "tradeable": true,
+    "joinedPair": "DOGEUSDT"
+  },
+  {
+    "key": "SHIB_USDT",
+    "profitMgn": 0.5,
+    "belowPrice": 0.1,
+    "orderQty": 50,
+    "okLoss": -2.5,
+    "okDiff": 2,
+    "tradeable": false,
+    "joinedPair": "SHIBUSDT"
+  },
+  {
+    "key": "FET_USDT",
+    "profitMgn": 0.5,
+    "belowPrice": 0.1,
+    "orderQty": 50,
+    "okLoss": -2.5,
+    "okDiff": 2,
+    "tradeable": true,
+    "joinedPair": "FETUSDT"
+  }
+]
