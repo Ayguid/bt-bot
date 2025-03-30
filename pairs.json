@@ -2,8 +2,8 @@
   {
     "key": "BTC_USDT",
     "profitMgn": 0.5,
-    "belowPrice": 0.15,
-    "orderQty": 500,
+    "belowPrice": 0.1,
+    "orderQty": 50,
     "okLoss": -2.5,
     "okDiff": 2,
     "tradeable": true,
@@ -12,8 +12,8 @@
   {
     "key": "ETH_USDT",
     "profitMgn": 0.5,
-    "belowPrice": 0.15,
-    "orderQty": 500,
+    "belowPrice": 0.1,
+    "orderQty": 50,
     "okLoss": -2.5,
     "okDiff": 2,
     "tradeable": true,
@@ -22,7 +22,7 @@
   {
     "key": "SOL_USDT",
     "profitMgn": 0.5,
-    "belowPrice": 0.15,
+    "belowPrice": 0.1,
     "orderQty": 50,
     "okLoss": -2.5,
     "okDiff": 2,
@@ -32,7 +32,7 @@
   {
     "key": "BNB_USDT",
     "profitMgn": 0.5,
-    "belowPrice": 0.15,
+    "belowPrice": 0.1,
     "orderQty": 50,
     "okLoss": -2.5,
     "okDiff": 2,
@@ -42,7 +42,7 @@
   {
     "key": "ICP_USDT",
     "profitMgn": 0.5,
-    "belowPrice": 0.15,
+    "belowPrice": 0.1,
     "orderQty": 50,
     "okLoss": -2.5,
     "okDiff": 2,
@@ -52,7 +52,7 @@
   {
     "key": "COTI_USDT",
     "profitMgn": 0.5,
-    "belowPrice": 0.15,
+    "belowPrice": 0.1,
     "orderQty": 50,
     "okLoss": -2.5,
     "okDiff": 2,
@@ -62,7 +62,7 @@
   {
     "key": "TURBO_USDT",
     "profitMgn": 0.5,
-    "belowPrice": 0.15,
+    "belowPrice": 0.1,
     "orderQty": 50,
     "okLoss": -2.5,
     "okDiff": 2,
@@ -72,7 +72,7 @@
   {
     "key": "LINK_USDT",
     "profitMgn": 0.5,
-    "belowPrice": 0.15,
+    "belowPrice": 0.1,
     "orderQty": 50,
     "okLoss": -2.5,
     "okDiff": 2,
@@ -82,7 +82,7 @@
   {
     "key": "1INCH_USDT",
     "profitMgn": 0.5,
-    "belowPrice": 0.15,
+    "belowPrice": 0.1,
     "orderQty": 50,
     "okLoss": -2.5,
     "okDiff": 2,
@@ -92,7 +92,7 @@
   {
     "key": "PEOPLE_USDT",
     "profitMgn": 0.5,
-    "belowPrice": 0.15,
+    "belowPrice": 0.1,
     "orderQty": 50,
     "okLoss": -2.5,
     "okDiff": 2,
@@ -102,7 +102,7 @@
   {
     "key": "DOGE_USDT",
     "profitMgn": 0.5,
-    "belowPrice": 0.15,
+    "belowPrice": 0.1,
     "orderQty": 50,
     "okLoss": -2.5,
     "okDiff": 2,
@@ -112,7 +112,7 @@
   {
     "key": "SHIB_USDT",
     "profitMgn": 0.5,
-    "belowPrice": 0.15,
+    "belowPrice": 0.1,
     "orderQty": 50,
     "okLoss": -2.5,
     "okDiff": 2,
@@ -122,7 +122,7 @@
   {
     "key": "FET_USDT",
     "profitMgn": 0.5,
-    "belowPrice": 0.15,
+    "belowPrice": 0.1,
     "orderQty": 50,
     "okLoss": -2.5,
     "okDiff": 2,

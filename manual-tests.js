@@ -7,7 +7,8 @@ const rl = readline.createInterface({
   output: process.stdout,
 });
 
-console.log('Type in terminal')
+console.log('Type in terminal');
+
 rl.on('line', (input) => {
     console.log(`Received: ${input}`);
     if(input.startsWith('cmd')){
