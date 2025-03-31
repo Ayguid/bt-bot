@@ -219,7 +219,7 @@ class TradingBot {
                 console.log('Conditions still favorable for selling. Keeping the order open.');
             }
             if (currentProfit <= pair.okLoss) { // waited_time > maxWaitingTime ||
-                console.log(`Selling at market price, too much loss.`);
+                console.log(`Selling at current price, too much loss.`);
                 await this.cancelAndSellToCurrentPrice(pair, lastOrder, currentPrice);
                 //await this.cancelAndSellToMarketPrice(pair, lastOrder);
             } else {
@@ -244,10 +244,10 @@ class TradingBot {
             const currentProfit = calculateProfit(currentPrice, previousOrder.price);//should be order price off buy order, this is not accurate
             console.log('\x1b[33m%s\x1b[0m', 'Bought price', previousOrder.price);
             console.log(`Profit is: ${currentProfit} %`);
-            if (currentProfit <= pair.okLoss && currentPrice < lastOrder.price) { //i dont like selling at market price, maybe cancell and resell at current price
-                console.log('Cancelling and Selling to market price, too much loss.');
-                //await this.cancelAndSellToMarketPrice(pair, lastOrder);
+            if (currentProfit <= pair.okLoss && currentPrice < previousOrder.price) { // && currentPrice < lastOrder.price,,,i dont like selling at market price, maybe cancell and resell at current price
+                console.log(123123123);
                 await this.cancelAndSellToCurrentPrice(pair, lastOrder, currentPrice);
+                //await this.cancelAndSellToMarketPrice(pair, lastOrder);
             };
         }
         else if (lastOrder.side == TradingBot.BUY) {
@@ -306,6 +306,7 @@ class TradingBot {
     }
     //
     async cancelAndSellToCurrentPrice(pair, lastOrder, currentPrice) {
+        console.log('Cancelling and Selling to current price, too much loss.');
         const order = await this.makeQueuedReq(cancelAndReplace, pair.joinedPair, TradingBot.SELL, 'LIMIT', { cancelOrderId: lastOrder.orderId, quantity: lastOrder.origQty, price: currentPrice, timeInForce: 'GTC' });
         return order;
     }
@@ -343,8 +344,8 @@ class TradingBot {
             }
             // Ensure same number of candles for consistency
             const minLength = Math.min(ohlcv1H.length, ohlcv4H.length);
-            const synced1H = ohlcv1H.slice(-minLength);
-            const synced4H = ohlcv4H.slice(-minLength);
+            const synced1H =  ohlcv1H.slice(-minLength);
+            const synced4H =  ohlcv4H.slice(-minLength);
             // Get indicators
             // const [indicators1H, indicators4H] = await Promise.all([
             //     getIndicators(synced1H),
@@ -366,7 +367,8 @@ class TradingBot {
             );
             //console.log(analysis.signals[0].details);
             // Send alerts and execute trades
-            this.sendGroupChatAlert(pair.key, analysis);
+            const normalizedSignal = analysis.consensusSignal.toLowerCase();
+            if (['buy', 'sell', 'strong_buy', 'strong_sell'].includes(normalizedSignal)) this.sendGroupChatAlert(pair.key, analysis);
             if (pair.tradeable && currentPrice?.price) {
                 await this.trade(pair, currentPrice.price, orders || [], analysis);
             }

@@ -40,7 +40,7 @@ class TelegramBotHandler {
             return; // Exit early if the Telegram bot is disabled
         }
         const normalizedSignal = analysis.consensusSignal.toLowerCase();
-        if (!['buy', 'sell'].includes(normalizedSignal)) return;
+        //if (!['buy', 'sell'].includes(normalizedSignal)) return;
         const currentTime = Date.now();
         if (!this.groupChatLastAlertTimes[normalizedSignal]) {
             this.groupChatLastAlertTimes[normalizedSignal] = {};
