@@ -4,16 +4,16 @@ const path = require('path');
 const crypto = require("crypto");
 const { execSync } = require('child_process'); // To run system commands for time synchronization
 // Local project modules
-const { serverTime, klines, fetchMyOrders, tickerPrice, userAsset, fetchMyAccount, placeOrder, cancelOrder, cancelAndReplace, exchangeInfo } = require('../utils/binance-spot');
-const { getIndicators } = require('../analysis/indicators');
-const { analyzeMultipleTimeframes } = require('../analysis/trendCalcs-multiframe');
-const { saveData } = require('../utils/fileManager');
-const RateLimitedQueue = require('../classes/RateLimitedQueue');
+const { serverTime, klines, fetchMyOrders, tickerPrice, userAsset, fetchMyAccount, placeOrder, cancelOrder, cancelAndReplace, exchangeInfo } = require('../../utils/binance-spot');
+const { getIndicators } = require('../../analysis/indicators');
+const { analyzeMultipleTimeframes } = require('../../analysis/multi/trendCalcs-multiframe');
+const { saveData } = require('../../utils/fileManager');
+const RateLimitedQueue = require('../../classes/RateLimitedQueue');
 const TablePrinter = require('./TablePrinter-multi');
 const TelegramBotHandler = require('./TelegramBotHandler-multi');
-const PairManager = require('./PairManager');
-const { plusPercent, minusPercent, calculateProfit, timePassed } = require('../utils/helpers');
-const config = require('../config'); // Configuration file
+const PairManager = require('../PairManager');
+const { plusPercent, minusPercent, calculateProfit, timePassed } = require('../../utils/helpers');
+const config = require('../../config'); // Configuration file
 
 class TradingBot {
     //ORDER_SIDES
@@ -33,7 +33,7 @@ class TradingBot {
         this.botDataLogger = {};
         this.exchangeInfo = {};
         // Initialize the PairManager with the path to the pairs file
-        this.pairManager = new PairManager(path.join(__dirname, '..', 'pairs-multi.json'));
+        this.pairManager = new PairManager(path.join(__dirname, '..', '../pairs-multi.json'));
         // Initialize the Telegram bot handler with a callback to handle commands
         this.telegramBotHandler = new TelegramBotHandler(this.config, this.executeCommand.bind(this));
         this.startTimeCheck(); // Start the server time checking interval
