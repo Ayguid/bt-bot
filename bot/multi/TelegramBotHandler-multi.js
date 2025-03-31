@@ -49,7 +49,7 @@ class TelegramBotHandler {
         const timeSinceLastAlert = currentTime - lastAlertTime;
         if (timeSinceLastAlert >= this.config.alertCooldown) {
             try {
-                this.tBot.sendMessage(process.env.TELEGRAM_GROUPCHAT_ID, `${analysis.signal} signal for ${pair}`);
+                this.tBot.sendMessage(process.env.TELEGRAM_GROUPCHAT_ID, `${normalizedSignal} signal for ${pair}`);
                 this.groupChatLastAlertTimes[normalizedSignal][pair] = currentTime;
                 console.log(`Alert sent for ${pair} (${normalizedSignal})`);
             } catch (error) {

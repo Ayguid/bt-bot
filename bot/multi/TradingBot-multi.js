@@ -5,8 +5,9 @@ const crypto = require("crypto");
 const { execSync } = require('child_process'); // To run system commands for time synchronization
 // Local project modules
 const { serverTime, klines, fetchMyOrders, tickerPrice, userAsset, fetchMyAccount, placeOrder, cancelOrder, cancelAndReplace, exchangeInfo } = require('../../utils/binance-spot');
-const { getIndicators } = require('../../analysis/indicators');
-const { analyzeMultipleTimeframes } = require('../../analysis/multi/trendCalcs-multiframe');
+const { getIndicators } = require('../../analysis/multi/indicators-multi');
+//const { analyzeMultipleTimeframes } = require('../../analysis/multi/trendCalcs-multiframe');
+const MarketAnalyzer = require('../../analysis/multi/MarketAnalyzer');
 const { saveData } = require('../../utils/fileManager');
 const RateLimitedQueue = require('../../classes/RateLimitedQueue');
 const TablePrinter = require('./TablePrinter-multi');
@@ -18,7 +19,9 @@ const config = require('../../config'); // Configuration file
 class TradingBot {
     //ORDER_SIDES
     static BUY = 'BUY';
+    static STRONG_BUY = 'STRONG_BUY';
     static SELL = 'SELL';
+    static STRONG_SELL = 'STRONG_SELL';
     //ORDER_STATUS
     static FILLED = 'FILLED';
     static PARTIALLY_FILLED = 'PARTIALLY_FILLED';
@@ -106,7 +109,6 @@ class TradingBot {
         //Remove trailing zeros and decimal point if it's only followed by zeros
         const trimmedValue = parseFloat(filterValue).toString();
         const parts = trimmedValue.split('.');
-
         return parts[1] ? parts[1].length : 0;
     }
     newBotOrderId() {
@@ -118,7 +120,6 @@ class TradingBot {
         console.log('Fetching exchange information');
         this.exchangeInfo = await this.makeQueuedReq(exchangeInfo);
         console.log('Exchange information loaded');
-        // console.log('Exchange information loaded:', this.exchangeInfo.symbols);
     }
     //
     async trade(pair, currentPrice, orders, analysis) {
@@ -129,18 +130,15 @@ class TradingBot {
 
         console.log('\x1b[32mTrading\x1b[0m', pair.key, 'at', currentPrice);
 
-        const buyIsApproved = analysis.consensusSignal === TradingBot.BUY;
-        const sellIsApproved = analysis.consensusSignal === TradingBot.SELL;
-
+        const buyIsApproved = analysis.consensusSignal === TradingBot.BUY ||  analysis.consensusSignal ===  TradingBot.STRONG_BUY;
+        const sellIsApproved = analysis.consensusSignal === TradingBot.SELL ||  analysis.consensusSignal ===  TradingBot.STRONG_SELL;
+        //console.log(analysis)
         if (!Array.isArray(orders) || orders.length === 0) {
             console.log('No existing orders - evaluating new trade');
             await this.considerNewOrder(pair, false, currentPrice, buyIsApproved, sellIsApproved);
             return;
         }
 
-        /*         const lastOrder = orders.reduce((latest, order) => 
-                  new Date(order.time) > new Date(latest.time) ? order : latest
-                ); */
         const sortedOrders = [...orders].sort((a, b) => new Date(b.time) - new Date(a.time));
         const [lastOrder, previousOrder] = sortedOrders.slice(0, 2);
 
@@ -166,8 +164,7 @@ class TradingBot {
     async handleExpiredOrder(pair, lastOrder) {
         if (lastOrder.side === TradingBot.SELL) {
             console.log('Last sell order expired.');
-            await this.cancelAndSellToMarketPrice(pair, lastOrder);
-            //await this.placeBuyOrder(pair, currentPrice);
+            //await this.cancelAndSellToMarketPrice(pair, lastOrder);
         } else if (lastOrder.side === TradingBot.BUY) { //order.side === TradingBot.BUY && sellIsApproved
             console.log('Last buy order expired.');
             //await this.placeSellOrder(pair, lastOrder);
@@ -223,13 +220,13 @@ class TradingBot {
             }
             if (currentProfit <= pair.okLoss) { // waited_time > maxWaitingTime ||
                 console.log(`Selling at market price, too much loss.`);
-                await this.cancelAndSellToMarketPrice(pair, lastOrder);
+                await this.cancelAndSellToCurrentPrice(pair, lastOrder, currentPrice);
+                //await this.cancelAndSellToMarketPrice(pair, lastOrder);
             } else {
                 console.log('Conditions no longer favorable for selling. Consider cancelling remaining order.');
                 // await this.cancelRemainingOrder(pair, order);
             }
         }
-        // Implement any additional async logic for partially filled orders
     }
     //
     async monitorPendingOrder(pair, lastOrder, previousOrder, currentPrice, buyIsApproved, sellIsApproved) {
@@ -247,11 +244,10 @@ class TradingBot {
             const currentProfit = calculateProfit(currentPrice, previousOrder.price);//should be order price off buy order, this is not accurate
             console.log('\x1b[33m%s\x1b[0m', 'Bought price', previousOrder.price);
             console.log(`Profit is: ${currentProfit} %`);
-            if (currentProfit <= pair.okLoss) { //i dont like selling at market price, maybe cancell and resell at current price
+            if (currentProfit <= pair.okLoss && currentPrice < lastOrder.price) { //i dont like selling at market price, maybe cancell and resell at current price
                 console.log('Cancelling and Selling to market price, too much loss.');
-                await this.cancelAndSellToMarketPrice(pair, lastOrder);
-                //console.log('Cancelling and Selling to current price, too much loss.');
-                //await this.cancelAndSellToCurrentPrice(pair, lastOrder, currentPrice);
+                //await this.cancelAndSellToMarketPrice(pair, lastOrder);
+                await this.cancelAndSellToCurrentPrice(pair, lastOrder, currentPrice);
             };
         }
         else if (lastOrder.side == TradingBot.BUY) {
@@ -262,11 +258,6 @@ class TradingBot {
                 await this.cancelOrder(pair, lastOrder);
             }
         }
-        // For example:
-        // const updatedOrder = await this.api.getOrderStatus(pair, order.id);
-        // if (updatedOrder.status !== TradingBot.NEW) {
-        //     await this.handleOrderStatusChange(pair, updatedOrder);
-        // }
     }
     //
     async placeBuyOrder(pair, currentPrice) {
@@ -319,10 +310,10 @@ class TradingBot {
         return order;
     }
     //
-    async cancelAndSellToMarketPrice(pair, lastOrder) {
-        const order = await this.makeQueuedReq(cancelAndReplace, pair.joinedPair, TradingBot.SELL, 'MARKET', { cancelOrderId: lastOrder.orderId, quantity: lastOrder.origQty });
-        return order;
-    }
+    // async cancelAndSellToMarketPrice(pair, lastOrder) {
+    //     const order = await this.makeQueuedReq(cancelAndReplace, pair.joinedPair, TradingBot.SELL, 'MARKET', { cancelOrderId: lastOrder.orderId, quantity: lastOrder.origQty });
+    //     return order;
+    // }
     // Additional method for cancelling orders
     async cancelRemainingOrder(pair, currentPrice, order) {
         console.log(`Cancelling remaining order for ${pair}`);
@@ -350,17 +341,21 @@ class TradingBot {
                 console.error('OHLCV error:', ohlcv1H.error || ohlcv4H.error);
                 return null;
             }
-
+            // Ensure same number of candles for consistency
+            const minLength = Math.min(ohlcv1H.length, ohlcv4H.length);
+            const synced1H = ohlcv1H.slice(-minLength);
+            const synced4H = ohlcv4H.slice(-minLength);
             // Get indicators
-            const [indicators1H, indicators4H] = await Promise.all([
-                getIndicators(ohlcv1H),
-                getIndicators(ohlcv4H)
-            ]);
+            // const [indicators1H, indicators4H] = await Promise.all([
+            //     getIndicators(synced1H),
+            //     getIndicators(synced4H)
+            // ]);
             //sync way
-            // const indicators1H = getIndicators(ohlcv1H);
-            // const indicators4H = getIndicators(ohlcv4H);
+            const indicators1H = getIndicators(synced1H);
+            const indicators4H = getIndicators(synced4H);
+            //console.log(indicators1H, indicators4H)
             // Multi-timeframe analysis
-            const analysis = analyzeMultipleTimeframes(
+            const analysis = MarketAnalyzer.analyzeMultipleTimeframes(
                 { '1h': indicators1H, '4h': indicators4H },
                 { '1h': ohlcv1H, '4h': ohlcv4H },
                 {

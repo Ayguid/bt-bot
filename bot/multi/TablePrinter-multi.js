@@ -40,6 +40,7 @@ class TablePrinter {
             { name: 'volumeChange', title: 'Vol Chg%', alignment: 'right' },
             { name: 'timeframes', title: 'Timeframes', alignment: 'center' },
             { name: 'acceleration', title: 'Accel', alignment: 'right' },
+            //{ name: 'potentialMoves', title: 'Pos Moves', alignment: 'right' },
             { name: 'tradeable', title: 'Trade', alignment: 'center' },
             { name: 'time', title: 'Time', alignment: 'right', color: 'custom_blue' }
         ];
@@ -52,7 +53,7 @@ class TablePrinter {
         const multiFrame = analysis.timeframesAnalyzed || [];
         
         // Get the most recent timeframe analysis for detailed metrics
-        const recentAnalysis = analysis.signals?.[0]?.details || {};
+        const recentAnalysis = analysis.signals?.[0]?.details || {}; //1hr
         const recentTrend = recentAnalysis.trend || {};
 
         return {
@@ -63,6 +64,7 @@ class TablePrinter {
             volumeChange: recentTrend.avgVolumeChange || '-',
             timeframes: multiFrame.join(',') || '-',
             acceleration: recentTrend.priceAcceleration || '-',
+            //potentialMoves: recentTrend.potentialMove + '--' +analysis.signals?.[1]?.details.trend.potentialMove|| '-',
             tradeable: element.tradeable ? '✓' : '✗',
             time: element.date ? element.date.split(' ')[1] : '-'
         };
@@ -70,8 +72,8 @@ class TablePrinter {
     
     getRowColor(element) {
         const signal = element.analysis?.consensusSignal;
-        if (signal === 'BUY') return 'custom_green';
-        if (signal === 'SELL') return 'custom_red';
+        if (signal === 'BUY' || signal ===  'STRONG_BUY') return 'custom_green';
+        if (signal === 'SELL' || signal ===  'STRONG_SELL') return 'custom_red';
         if (element.tradeable) return 'custom_yellow';
         return 'white';
     }

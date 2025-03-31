@@ -215,13 +215,49 @@ const analyzeCandles = (candles, analysisWindow = candles.length) => {
     let buyScore = 0;
     let sellScore = 0;
   
-    // Buy conditions (abbreviated for space)
-    if (indicators.macd?.histogram?.length > 2 && 
-        indicators.macd.histogram.slice(-1)[0] > indicators.macd.histogram.slice(-2)[0] && 
-        Math.abs(indicators.macd.histogram.slice(-1)[0]) < 0.05) {
-      buyScore += INDICATOR_WEIGHTS.macdMomentum;
-    }
-    // ... (include all your other buy/sell conditions)
+  // Buy conditions
+  const macdMomentumBuilding = indicators.macd?.histogram?.length > 2 && 
+      indicators.macd.histogram.slice(-1)[0] > indicators.macd.histogram.slice(-2)[0] && 
+      Math.abs(indicators.macd.histogram.slice(-1)[0]) < 0.05;
+
+  const stochRSITurning = indicators.stoch_rsi?.length > 1 && 
+      indicators.stoch_rsi.slice(-1)[0].k > 30 &&
+      indicators.stoch_rsi.slice(-1)[0].k > indicators.stoch_rsi.slice(-2)[0].k;
+
+  const aoBuilding = indicators.ao?.length > 3 && 
+      indicators.ao.slice(-1)[0] > indicators.ao.slice(-2)[0] &&
+      indicators.ao.slice(-2)[0] > indicators.ao.slice(-3)[0] &&
+      Math.abs(indicators.ao.slice(-1)[0]) < 0.1;
+
+  const isPreBreakout = closePosition > 0.7 && volumeIncrease > 5;
+  const isBottoming = closePosition < 0.3 && volumeIncrease > 5 && lastClose > previousClose;
+  const gapUp = parseFloat(lastCandle[3]) > previousClose;
+  const bullishEngulfing = parseFloat(lastCandle[3]) < previousClose && 
+      lastClose > parseFloat(previousCandle[2]);
+
+  if (macdMomentumBuilding) buyScore += INDICATOR_WEIGHTS.macdMomentum;
+  if (stochRSITurning) buyScore += INDICATOR_WEIGHTS.stochRSITurning;
+  if (indicators.rsi?.slice(-1)[0] < RSI_OVERSOLD) buyScore += INDICATOR_WEIGHTS.rsiOversold;
+  if (aoBuilding) buyScore += INDICATOR_WEIGHTS.aoBuilding;
+  if (isPreBreakout) buyScore += INDICATOR_WEIGHTS.isPreBreakout;
+  if (isBottoming) buyScore += INDICATOR_WEIGHTS.isBottoming;
+  if (gapUp && volumeIncrease > 10) buyScore += INDICATOR_WEIGHTS.gapUp;
+  if (bullishEngulfing) buyScore += INDICATOR_WEIGHTS.bullishEngulfing;
+  if (candleAnalysis.potentialMove === "ACCELERATION") buyScore += INDICATOR_WEIGHTS.priceAcceleration;
+  if (candleAnalysis.volumePattern === "INCREASING") buyScore += INDICATOR_WEIGHTS.volumePattern;
+  if (advancedPatterns.isThreeWhiteSoldiers) buyScore += INDICATOR_WEIGHTS.threeWhiteSoldiers;
+
+  // Sell conditions
+  const gapDown = parseFloat(lastCandle[2]) < previousClose;
+  const bearishEngulfing = parseFloat(lastCandle[2]) > previousClose && 
+      lastClose < parseFloat(previousCandle[3]);
+
+  if (indicators.rsi?.slice(-1)[0] > RSI_OVERBOUGHT) sellScore += INDICATOR_WEIGHTS.rsiOverbought;
+  if (indicators.stoch_rsi?.slice(-1)[0].k > 80) sellScore += INDICATOR_WEIGHTS.stochRSIOverbought;
+  if (parseFloat(candleAnalysis.priceAcceleration) < -0.1) sellScore += INDICATOR_WEIGHTS.priceAcceleration;
+  if (gapDown && volumeIncrease > 10) sellScore += INDICATOR_WEIGHTS.gapDown;
+  if (bearishEngulfing) sellScore += INDICATOR_WEIGHTS.bearishEngulfing;
+  if (advancedPatterns.isThreeBlackCrows) sellScore += INDICATOR_WEIGHTS.threeBlackCrows;
   
     const resData = {
       signal: '',
