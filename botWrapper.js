@@ -1,7 +1,7 @@
 const { spawn } = require('child_process');
 
 const startBot = () => {
-    const botProcess = spawn('node', ['./bot/TradingBot.js'], { stdio: 'inherit' });
+    const botProcess = spawn('node', ['./bot/TradingBot-multi.js'], { stdio: 'inherit' });
 
     botProcess.on('exit', (code) => {
         console.log(`Bot exited with code ${code}. Restarting...`);
