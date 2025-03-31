@@ -109,7 +109,7 @@ class TradingBot {
 
         return parts[1] ? parts[1].length : 0;
     }
-    newBotOrderId(){
+    newBotOrderId() {
         const id = crypto.randomBytes(16).toString("hex");
         return 'bot-' + id;
     }
@@ -123,45 +123,47 @@ class TradingBot {
     //
     async trade(pair, currentPrice, orders, analysis) {
         if (!pair || !currentPrice || !orders || !analysis) {
-          console.error('Missing trading parameters');
-          return;
+            console.error('Missing trading parameters');
+            return;
         }
-      
+
         console.log('\x1b[32mTrading\x1b[0m', pair.key, 'at', currentPrice);
-      
+
         const buyIsApproved = analysis.consensusSignal === TradingBot.BUY;
         const sellIsApproved = analysis.consensusSignal === TradingBot.SELL;
-      
+
         if (!Array.isArray(orders) || orders.length === 0) {
-          console.log('No existing orders - evaluating new trade');
-          await this.considerNewOrder(pair, false, currentPrice, buyIsApproved, sellIsApproved);
-          return;
+            console.log('No existing orders - evaluating new trade');
+            await this.considerNewOrder(pair, false, currentPrice, buyIsApproved, sellIsApproved);
+            return;
         }
-      
-        const lastOrder = orders.reduce((latest, order) => 
-          new Date(order.time) > new Date(latest.time) ? order : latest
-        );
-      
+
+        /*         const lastOrder = orders.reduce((latest, order) => 
+                  new Date(order.time) > new Date(latest.time) ? order : latest
+                ); */
+        const sortedOrders = [...orders].sort((a, b) => new Date(b.time) - new Date(a.time));
+        const [lastOrder, previousOrder] = sortedOrders.slice(0, 2);
+
         switch (lastOrder.status) {
-          case TradingBot.FILLED:
-            await this.handleFilledOrder(pair, lastOrder, currentPrice, buyIsApproved);
-            break;
-          case TradingBot.PARTIALLY_FILLED:
-            await this.handlePartiallyFilledOrder(pair, lastOrder, currentPrice, buyIsApproved, sellIsApproved);
-            break;
-          case TradingBot.NEW:
-            await this.monitorPendingOrder(pair, lastOrder, currentPrice, buyIsApproved, sellIsApproved);
-            break;
-          case TradingBot.CANCELED:
-          case TradingBot.EXPIRED:
-            await this.considerNewOrder(pair, lastOrder, currentPrice, buyIsApproved, sellIsApproved);
-            break;
-          default:
-            console.log('Unhandled order status:', lastOrder.status);
+            case TradingBot.FILLED:
+                await this.handleFilledOrder(pair, lastOrder, currentPrice, buyIsApproved);
+                break;
+            case TradingBot.PARTIALLY_FILLED:
+                await this.handlePartiallyFilledOrder(pair, lastOrder, previousOrder, currentPrice, buyIsApproved, sellIsApproved);
+                break;
+            case TradingBot.NEW:
+                await this.monitorPendingOrder(pair, lastOrder, previousOrder, currentPrice, buyIsApproved, sellIsApproved);
+                break;
+            case TradingBot.CANCELED:
+            case TradingBot.EXPIRED:
+                await this.considerNewOrder(pair, lastOrder, currentPrice, buyIsApproved, sellIsApproved);
+                break;
+            default:
+                console.log('Unhandled order status:', lastOrder.status);
         }
     }
     //
-    async handleExpiredOrder(pair, lastOrder){
+    async handleExpiredOrder(pair, lastOrder) {
         if (lastOrder.side === TradingBot.SELL) {
             console.log('Last sell order expired.');
             await this.cancelAndSellToMarketPrice(pair, lastOrder);
@@ -171,7 +173,7 @@ class TradingBot {
             //await this.placeSellOrder(pair, lastOrder);
         } else {
             console.log('Filled order exists, but current conditions not favorable for new order.');
-        }    
+        }
     }
     //
     async considerNewOrder(pair, lastOrder = false, currentPrice, buyIsApproved, sellIsApproved) {
@@ -198,14 +200,14 @@ class TradingBot {
         }
     }
     //
-    async handlePartiallyFilledOrder(pair, lastOrder, currentPrice, buyIsApproved, sellIsApproved) {
+    async handlePartiallyFilledOrder(pair, lastOrder, previousOrder, currentPrice, buyIsApproved, sellIsApproved) {
         console.log(`Order for ${pair.key} is partially filled. Filled amount: ${lastOrder.executedQty}`);
         //const maxWaitingTime = 2; //in hrs
         const waited_time = timePassed(new Date(lastOrder.updateTime)) / 3600; // to convert secs to hrs, divide by 3600
         console.log('Time waiting: ', waited_time);
         const remainingQty = lastOrder.origQty - lastOrder.executedQty;
         console.log(`Remaining quantity to be filled: ${remainingQty}`);
-        
+
         if (lastOrder.side === TradingBot.BUY) {
             if (buyIsApproved) {
                 console.log('Conditions still favorable for buying. Keeping the order open.');
@@ -214,12 +216,12 @@ class TradingBot {
                 // await this.cancelRemainingOrder(pair, order);
             }
         } else if (lastOrder.side === TradingBot.SELL) {
-            const currentProfit = calculateProfit(currentPrice, lastOrder.price);//should be order price off buy order, this is not accurate
+            const currentProfit = calculateProfit(currentPrice, previousOrder.price);//should be order price off buy order, this is not accurate
             console.log(`Profit is: ${currentProfit} %`);
             if (sellIsApproved) {
                 console.log('Conditions still favorable for selling. Keeping the order open.');
             }
-            if (currentProfit <= pair.okLoss){ // waited_time > maxWaitingTime ||
+            if (currentProfit <= pair.okLoss) { // waited_time > maxWaitingTime ||
                 console.log(`Selling at market price, too much loss.`);
                 await this.cancelAndSellToMarketPrice(pair, lastOrder);
             } else {
@@ -230,7 +232,8 @@ class TradingBot {
         // Implement any additional async logic for partially filled orders
     }
     //
-    async monitorPendingOrder(pair, lastOrder, currentPrice, buyIsApproved, sellIsApproved) {
+    async monitorPendingOrder(pair, lastOrder, previousOrder, currentPrice, buyIsApproved, sellIsApproved) {
+        console.log('\x1b[32m%s\x1b[0m', 'Current price', currentPrice);
         console.log(
             `Monitoring pending ${lastOrder.side},
             order for ${pair.key}, 
@@ -238,26 +241,27 @@ class TradingBot {
             Order Price: ${lastOrder.price},
             Order Qty: ${lastOrder.origQty}
             `
-        );  
+        );
         //
-        if(lastOrder.side == TradingBot.SELL){
-            const currentProfit = calculateProfit(currentPrice, lastOrder.price);//should be order price off buy order, this is not accurate
+        if (lastOrder.side == TradingBot.SELL) {
+            const currentProfit = calculateProfit(currentPrice, previousOrder.price);//should be order price off buy order, this is not accurate
+            console.log('\x1b[33m%s\x1b[0m', 'Bought price', previousOrder.price);
             console.log(`Profit is: ${currentProfit} %`);
-            if(currentProfit <= pair.okLoss){ //i dont like selling at market price, maybe cancell and resell at current price
+            if (currentProfit <= pair.okLoss) { //i dont like selling at market price, maybe cancell and resell at current price
                 console.log('Cancelling and Selling to market price, too much loss.');
                 await this.cancelAndSellToMarketPrice(pair, lastOrder);
                 //console.log('Cancelling and Selling to current price, too much loss.');
                 //await this.cancelAndSellToCurrentPrice(pair, lastOrder, currentPrice);
             };
         }
-        else if(lastOrder.side == TradingBot.BUY){
+        else if (lastOrder.side == TradingBot.BUY) {
             const orderPriceDiff = calculateProfit(currentPrice, lastOrder.price);//should be order price off buy order, this is not accurate
             console.log(`Price diff with order is: ${orderPriceDiff} %`);
-            if(!buyIsApproved || orderPriceDiff >= pair.okDiff){
-                console.log(`Cancelling Buy Order, conditions no longer ok, price went up by ${orderPriceDiff} %`); 
+            if (!buyIsApproved || orderPriceDiff >= pair.okDiff) {
+                console.log(`Cancelling Buy Order, conditions no longer ok, price went up by ${orderPriceDiff} %`);
                 await this.cancelOrder(pair, lastOrder);
             }
-        }   
+        }
         // For example:
         // const updatedOrder = await this.api.getOrderStatus(pair, order.id);
         // if (updatedOrder.status !== TradingBot.NEW) {
@@ -270,7 +274,7 @@ class TradingBot {
         const balances = await this.getBalances(pair.key);
         //const baseAsset = balances[0];
         const quoteAsset = balances[1];
-        if(quoteAsset.free < pair.orderQty) {
+        if (quoteAsset.free < pair.orderQty) {
             console.warn('Not enough balance to place buy order.');
             return;
         }
@@ -278,9 +282,9 @@ class TradingBot {
         const priceDecimals = this.getDecimals(filters.find(f => f.filterType === 'PRICE_FILTER').tickSize);
         const qtyDecimals = this.getDecimals(filters.find(f => f.filterType === 'LOT_SIZE').stepSize);
         //
-        const buyPrice = minusPercent(pair.belowPrice, currentPrice).toFixed(priceDecimals); 
+        const buyPrice = minusPercent(pair.belowPrice, currentPrice).toFixed(priceDecimals);
         const qty = (pair.orderQty / buyPrice).toFixed(qtyDecimals);
-        const order = await this.makeQueuedReq(placeOrder, pair.joinedPair, TradingBot.BUY, 'LIMIT', {price: buyPrice, quantity: qty, timeInForce: 'GTC', newClientOrderId: this.newBotOrderId()});
+        const order = await this.makeQueuedReq(placeOrder, pair.joinedPair, TradingBot.BUY, 'LIMIT', { price: buyPrice, quantity: qty, timeInForce: 'GTC', newClientOrderId: this.newBotOrderId() });
         return order;
     }
     //
@@ -289,7 +293,7 @@ class TradingBot {
         const balances = await this.getBalances(pair.key);
         const baseAsset = balances[0];
         //const quoteAsset = balances[1];
-        if(baseAsset.free <= 0) {//fix this
+        if (baseAsset.free <= 0) {//fix this
             console.warn('Not enough balance to place sell order.');
             return;
         }
@@ -300,23 +304,23 @@ class TradingBot {
         const sellPrice = plusPercent(pair.profitMgn, lastOrder.price).toFixed(priceDecimals); //later maybe we subtract x%
         //
         const qty = lastOrder.executedQty; //(pair.orderQty / currentPrice).toFixed(pair.decimals);
-        const order = await this.makeQueuedReq(placeOrder, pair.joinedPair, TradingBot.SELL, 'LIMIT', {price: sellPrice, quantity: qty, timeInForce: 'GTC', newClientOrderId: this.newBotOrderId()});
+        const order = await this.makeQueuedReq(placeOrder, pair.joinedPair, TradingBot.SELL, 'LIMIT', { price: sellPrice, quantity: qty, timeInForce: 'GTC', newClientOrderId: this.newBotOrderId() });
         return order;
     }
     //
-    async cancelOrder(pair, lastOrder){
+    async cancelOrder(pair, lastOrder) {
         //console.log(lastOrder);
         const order = await this.makeQueuedReq(cancelOrder, pair.joinedPair, lastOrder.orderId);
         return order;
     }
     //
-    async cancelAndSellToCurrentPrice(pair, lastOrder, currentPrice){
-        const order = await this.makeQueuedReq(cancelAndReplace, pair.joinedPair, TradingBot.SELL, 'LIMIT', { cancelOrderId: lastOrder.orderId, quantity: lastOrder.origQty, price: currentPrice, timeInForce: 'GTC'});
+    async cancelAndSellToCurrentPrice(pair, lastOrder, currentPrice) {
+        const order = await this.makeQueuedReq(cancelAndReplace, pair.joinedPair, TradingBot.SELL, 'LIMIT', { cancelOrderId: lastOrder.orderId, quantity: lastOrder.origQty, price: currentPrice, timeInForce: 'GTC' });
         return order;
     }
     //
-    async cancelAndSellToMarketPrice(pair, lastOrder){
-        const order = await this.makeQueuedReq(cancelAndReplace, pair.joinedPair, TradingBot.SELL, 'MARKET', { cancelOrderId: lastOrder.orderId, quantity: lastOrder.origQty});
+    async cancelAndSellToMarketPrice(pair, lastOrder) {
+        const order = await this.makeQueuedReq(cancelAndReplace, pair.joinedPair, TradingBot.SELL, 'MARKET', { cancelOrderId: lastOrder.orderId, quantity: lastOrder.origQty });
         return order;
     }
     // Additional method for cancelling orders
@@ -331,74 +335,76 @@ class TradingBot {
     async processPair(pair) {
         console.log('\x1b[33mProcessing\x1b[0m', pair.key);
         pair.joinedPair = pair.key.replace('_', '');
-      
-        try {
-          // Fetch data for multiple timeframes
-          const [ohlcv1H, ohlcv4H, orders, currentPrice] = await Promise.all([
-            this.makeQueuedReq(klines, pair.joinedPair, '1h', this.config.analysisWindow * 2),
-            this.makeQueuedReq(klines, pair.joinedPair, '4h', this.config.analysisWindow / 2),
-            pair.tradeable ? this.makeQueuedReq(fetchMyOrders, pair.joinedPair) : [],
-            pair.tradeable ? this.makeQueuedReq(tickerPrice, pair.joinedPair) : null
-          ]);
-      
-          // Error handling
-          if (ohlcv1H.error || ohlcv4H.error) {
-            console.error('OHLCV error:', ohlcv1H.error || ohlcv4H.error);
-            return null;
-          }
-      
-          // Get indicators
-          const [indicators1H, indicators4H] = await Promise.all([
-            getIndicators(ohlcv1H),
-            getIndicators(ohlcv4H)
-          ]);
-      
-          // Multi-timeframe analysis
-          const analysis = analyzeMultipleTimeframes(
-            { '1h': indicators1H, '4h': indicators4H },
-            { '1h': ohlcv1H, '4h': ohlcv4H },
-            {
-              analysisWindow: this.config.analysisWindow,
-              primaryTimeframe: this.config.klinesInterval,
-              weights: { '1h': 1, '4h': 2 }
-            }
-          );
-          //console.log(analysis.signals[0].details);
-          // Send alerts and execute trades
-          this.sendGroupChatAlert(pair.key, analysis);
-          if (pair.tradeable && currentPrice?.price) {
-            await this.trade(pair, currentPrice.price, orders || [], analysis);
-          }
-      
-          return {
-            ...pair,
-            indicators: { '1h': indicators1H, '4h': indicators4H },
-            analysis,
-            orders,
-            currentPrice: currentPrice?.price,
-            date: new Date().toLocaleString()
-          };
-      
-        } catch (error) {
-          console.error('Error processing pair:', pair.key, error);
-          return null;
-        }
-      }
 
-    async getBalances(pair){ // userAsset wont work on testnet, this is a workaround that uses the whole wallet balance in testnet
+        try {
+            // Fetch data for multiple timeframes
+            const [ohlcv1H, ohlcv4H, orders, currentPrice] = await Promise.all([
+                this.makeQueuedReq(klines, pair.joinedPair, '1h'),
+                this.makeQueuedReq(klines, pair.joinedPair, '4h'),
+                pair.tradeable ? this.makeQueuedReq(fetchMyOrders, pair.joinedPair) : [],
+                pair.tradeable ? this.makeQueuedReq(tickerPrice, pair.joinedPair) : null
+            ]);
+
+            // Error handling
+            if (ohlcv1H.error || ohlcv4H.error) {
+                console.error('OHLCV error:', ohlcv1H.error || ohlcv4H.error);
+                return null;
+            }
+
+            // Get indicators
+            const [indicators1H, indicators4H] = await Promise.all([
+                getIndicators(ohlcv1H),
+                getIndicators(ohlcv4H)
+            ]);
+            //sync way
+            // const indicators1H = getIndicators(ohlcv1H);
+            // const indicators4H = getIndicators(ohlcv4H);
+            // Multi-timeframe analysis
+            const analysis = analyzeMultipleTimeframes(
+                { '1h': indicators1H, '4h': indicators4H },
+                { '1h': ohlcv1H, '4h': ohlcv4H },
+                {
+                    analysisWindow: this.config.analysisWindow,
+                    primaryTimeframe: this.config.klinesInterval,
+                    weights: { '1h': 1, '4h': 2 }
+                }
+            );
+            //console.log(analysis.signals[0].details);
+            // Send alerts and execute trades
+            this.sendGroupChatAlert(pair.key, analysis);
+            if (pair.tradeable && currentPrice?.price) {
+                await this.trade(pair, currentPrice.price, orders || [], analysis);
+            }
+            //console.log({...pair},analysis.signals[0]);
+            return {
+                ...pair,
+                indicators: { '1h': indicators1H, '4h': indicators4H },
+                analysis,
+                orders,
+                currentPrice: currentPrice?.price,
+                date: new Date().toLocaleString()
+            };
+
+        } catch (error) {
+            console.error('Error processing pair:', pair.key, error);
+            return null;
+        }
+    }
+
+    async getBalances(pair) { // userAsset wont work on testnet, this is a workaround that uses the whole wallet balance in testnet
         const assetKey = pair.split("_")[0];//ETH_
         const stableKey = pair.split("_")[1];//_USDT
         console.log(assetKey, stableKey);
         const TESTNET = process.env.TESTNET == 'true';
         let baseAsset;
         let quoteAsset;
-        if(TESTNET){
+        if (TESTNET) {
             const wallet = await this.makeQueuedReq(fetchMyAccount);
             baseAsset = wallet.balances.find(asset => asset.asset == assetKey)
             quoteAsset = wallet.balances.find(asset => asset.asset == stableKey)
-            
-        }else{
-            [ baseAsset, quoteAsset ] = await Promise.all([ //parallel method
+
+        } else {
+            [baseAsset, quoteAsset] = await Promise.all([ //parallel method
                 this.makeQueuedReq(userAsset, assetKey),
                 this.makeQueuedReq(userAsset, stableKey)
             ]);
@@ -409,7 +415,7 @@ class TradingBot {
         return [
             baseAsset,
             quoteAsset
-        ];    
+        ];
     }
 
     async processAllPairs() {
@@ -424,6 +430,7 @@ class TradingBot {
                     const index = allPairs.indexOf(pair); // Use the index to maintain order
                     results[index] = result; // Store result
                     this.botDataLogger[pair.key] = result; // Update botDataLogger with the latest result
+                    console.log('\n');
                 }
                 if (this.config.pairDelay) await this.wait(3000); //for debug 
             } catch (error) {
@@ -475,7 +482,7 @@ class TradingBot {
 
         if (timeDifference > this.config.maxTimeDifferenceMs) {
             console.log('Time difference too large. Resynchronizing system time...');
-            if(this.config.shouldResynch) this.resynchronizeTime();
+            if (this.config.shouldResynch) this.resynchronizeTime();
         }
     }
     // Function to resynchronize system time
@@ -498,3 +505,97 @@ class TradingBot {
     await bot.init();
     bot.startBot();
 })();
+
+/*
+async processPair(pair) {
+    console.log('\x1b[33mProcessing\x1b[0m', pair.key);
+    pair.joinedPair = pair.key.replace('_', '');
+
+    try {
+        // 1. Data Fetching
+        const { ohlcvData, orders, currentPrice } = await this.fetchPairData(pair);
+        if (!ohlcvData) return null; // Error already logged in fetchPairData
+
+        // 2. Indicator Calculation
+        const indicators = await this.calculateIndicators(ohlcvData);
+
+        // 3. Market Analysis
+        const analysis = this.analyzeMarket(ohlcvData, indicators);
+
+        // 4. Notification & Trading
+        this.sendGroupChatAlert(pair.key, analysis);
+        if (pair.tradeable && currentPrice) {
+            await this.trade(pair, currentPrice, orders || [], analysis);
+        }
+
+        return this.formatResult(pair, indicators, analysis, orders, currentPrice);
+
+    } catch (error) {
+        console.error('Error processing pair:', pair.key, error);
+        return null;
+    }
+}
+
+// --- Helper Methods --- //
+
+async fetchPairData(pair) {
+    try {
+        const [ohlcv1H, ohlcv4H, orders, currentPrice] = await Promise.all([
+            this.makeQueuedReq(klines, pair.joinedPair, '1h'),
+            this.makeQueuedReq(klines, pair.joinedPair, '4h'),
+            pair.tradeable ? this.makeQueuedReq(fetchMyOrders, pair.joinedPair) : [],
+            pair.tradeable ? this.makeQueuedReq(tickerPrice, pair.joinedPair) : null
+        ]);
+
+        if (ohlcv1H.error || ohlcv4H.error) {
+            console.error('OHLCV error:', ohlcv1H.error || ohlcv4H.error);
+            return { ohlcvData: null };
+        }
+
+        return {
+            ohlcvData: { '1h': ohlcv1H, '4h': ohlcv4H },
+            orders,
+            currentPrice: currentPrice?.price
+        };
+    } catch (error) {
+        console.error('Error fetching data for pair:', pair.key, error);
+        return { ohlcvData: null };
+    }
+}
+
+async calculateIndicators(ohlcvData) {
+    try {
+        const [indicators1H, indicators4H] = await Promise.all([
+            getIndicators(ohlcvData['1h']),
+            getIndicators(ohlcvData['4h'])
+        ]);
+        return { '1h': indicators1H, '4h': indicators4H };
+    } catch (error) {
+        console.error('Error calculating indicators:', error);
+        throw error; // Rethrow for parent catch
+    }
+}
+
+analyzeMarket(ohlcvData, indicators) {
+    return analyzeMultipleTimeframes(
+        indicators,
+        ohlcvData,
+        {
+            analysisWindow: this.config.analysisWindow,
+            primaryTimeframe: this.config.klinesInterval,
+            weights: { '1h': 1, '4h': 2 }
+        }
+    );
+}
+
+formatResult(pair, indicators, analysis, orders, currentPrice) {
+    return {
+        ...pair,
+        indicators,
+        analysis,
+        orders,
+        currentPrice,
+        date: new Date().toLocaleString()
+    };
+}
+*/
