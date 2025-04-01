@@ -3,7 +3,7 @@ const config = {
     isRunning: false,
     telegramBotEnabled: true,
     printTable: true,
-    saveData: false,
+    saveData: true,
     //
     loopDelay: 500, //delay for the whole pairs array loop
     pairDelay: false, //delay between pairs, default is false, just for debuggin
