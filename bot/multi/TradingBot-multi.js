@@ -124,7 +124,7 @@ class TradingBot {
         console.log(`- Base Stop: ${stopPercentage}%`);
     
         // 2. Volatility adjustment with fallback
-        const candles = (analysis.indicators && analysis.indicators['1h'] && analysis.indicators['1h'].candles) || [];
+        const candles = (analysis.candles && analysis.candles['1h']) || [];
         const volatility = this.getVolatilityAssessment(candles);
         const volatilityFactor = 1 + (volatility / 50);
         console.log(`- Volatility: ${volatility}% → Factor: ${volatilityFactor.toFixed(2)}`);
@@ -176,7 +176,7 @@ class TradingBot {
         this.exchangeInfo = await this.makeQueuedReq(exchangeInfo);
         console.log('Exchange information loaded');
     }
-
+    
     async trade(pair, currentPrice, orders, analysis) {
         if (!pair || !currentPrice || !orders || !analysis) {
             console.error('Missing trading parameters');
@@ -187,12 +187,6 @@ class TradingBot {
 
         const buyIsApproved = analysis.consensusSignal === TradingBot.BUY || analysis.consensusSignal === TradingBot.STRONG_BUY;
         const sellIsApproved = analysis.consensusSignal === TradingBot.SELL || analysis.consensusSignal === TradingBot.STRONG_SELL;
-
-        // Add candles to analysis for volatility calculation
-        analysis.indicators = {
-            '1h': { candles: await this.makeQueuedReq(klines, pair.joinedPair, '1h', { limit: 20 }) },
-            '4h': { candles: await this.makeQueuedReq(klines, pair.joinedPair, '4h', { limit: 20 }) }
-        };
 
         if (!Array.isArray(orders) || orders.length === 0) {
             console.log('No existing orders - evaluating new trade');
@@ -389,18 +383,56 @@ class TradingBot {
         return order;
     }
 
+    async fetchPairData(pair) {
+        return Promise.all([
+            this.makeQueuedReq(klines, pair.joinedPair, '1h'),
+            this.makeQueuedReq(klines, pair.joinedPair, '4h'),
+            pair.tradeable ? this.makeQueuedReq(fetchMyOrders, pair.joinedPair) : [],
+            pair.tradeable ? this.makeQueuedReq(tickerPrice, pair.joinedPair) : null
+        ]);
+    }
+
+    analyzePairData(ohlcv1H, ohlcv4H) {
+        const minLength = Math.min(ohlcv1H.length, ohlcv4H.length);
+        const synced1H = ohlcv1H.slice(-minLength);
+        const synced4H = ohlcv4H.slice(-minLength);
+        
+        const indicators1H = getIndicators(synced1H);
+        const indicators4H = getIndicators(synced4H);
+        
+        const analysis = MarketAnalyzer.analyzeMultipleTimeframes(
+            { '1h': indicators1H, '4h': indicators4H },
+            { '1h': synced1H, '4h': synced4H },
+            {
+                analysisWindow: this.config.analysisWindow,
+                primaryTimeframe: this.config.klinesInterval,
+                weights: { '1h': 1, '4h': 2 }
+            }
+        );
+        
+        analysis.candles = { '1h': synced1H, '4h': synced4H };
+        
+        return { analysis, indicators1H, indicators4H };
+    }
+
+    createPairResult(pair, indicators1H, indicators4H, analysis, orders, currentPrice) {
+        return {
+            ...pair,
+            indicators: { '1h': indicators1H, '4h': indicators4H },
+            analysis,
+            orders,
+            currentPrice: currentPrice?.price,
+            date: new Date().toLocaleString()
+        };
+    }
+
     async processPair(pair) {
         console.log('\x1b[33mProcessing\x1b[0m', pair.key);
         pair.joinedPair = pair.key.replace('_', '');
 
         try {
             // Fetch data for multiple timeframes
-            const [ohlcv1H, ohlcv4H, orders, currentPrice] = await Promise.all([
-                this.makeQueuedReq(klines, pair.joinedPair, '1h'),
-                this.makeQueuedReq(klines, pair.joinedPair, '4h'),
-                pair.tradeable ? this.makeQueuedReq(fetchMyOrders, pair.joinedPair) : [],
-                pair.tradeable ? this.makeQueuedReq(tickerPrice, pair.joinedPair) : null
-            ]);
+            const [ohlcv1H, ohlcv4H, orders, currentPrice] = await this.fetchPairData(pair);
 
             // Error handling
             if (ohlcv1H.error || ohlcv4H.error) {
@@ -408,41 +440,17 @@ class TradingBot {
                 return null;
             }
             
-            // Ensure same number of candles for consistency
-            const minLength = Math.min(ohlcv1H.length, ohlcv4H.length);
-            const synced1H = ohlcv1H.slice(-minLength);
-            const synced4H = ohlcv4H.slice(-minLength);
-            
-            // Get indicators
-            const indicators1H = getIndicators(synced1H);
-            const indicators4H = getIndicators(synced4H);
-            
-            // Multi-timeframe analysis
-            const analysis = MarketAnalyzer.analyzeMultipleTimeframes(
-                { '1h': indicators1H, '4h': indicators4H },
-                { '1h': ohlcv1H, '4h': ohlcv4H },
-                {
-                    analysisWindow: this.config.analysisWindow,
-                    primaryTimeframe: this.config.klinesInterval,
-                    weights: { '1h': 1, '4h': 2 }
-                }
-            );
-            
+            const { analysis, indicators1H, indicators4H } = this.analyzePairData(ohlcv1H, ohlcv4H);
+      
             // Send alerts and execute trades
             const normalizedSignal = analysis.consensusSignal.toLowerCase();
             if (['buy', 'sell', 'strong_buy', 'strong_sell'].includes(normalizedSignal) && this.config.telegramBotEnabled) this.sendGroupChatAlert(pair.key, analysis);
+
             if (pair.tradeable && currentPrice?.price) {
                 await this.trade(pair, currentPrice.price, orders || [], analysis);
             }
             
-            return {
-                ...pair,
-                indicators: { '1h': indicators1H, '4h': indicators4H },
-                analysis,
-                orders,
-                currentPrice: currentPrice?.price,
-                date: new Date().toLocaleString()
-            };
+            return this.createPairResult(pair, indicators1H, indicators4H, analysis, orders, currentPrice);
 
         } catch (error) {
             console.error('Error processing pair:', pair.key, error);
