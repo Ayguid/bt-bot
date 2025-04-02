@@ -2,9 +2,8 @@ require('dotenv').config(); // Environment variables
 // Node.js built-in modules
 const path = require('path');
 const crypto = require("crypto");
-const { execSync } = require('child_process'); // To run system commands for time synchronization
 // Local project modules
-const { serverTime, klines, fetchMyOrders, tickerPrice, userAsset, fetchMyAccount, placeOrder, cancelOrder, cancelAndReplace, exchangeInfo } = require('../../utils/binance-spot');
+const { klines, fetchMyOrders, tickerPrice, userAsset, fetchMyAccount, placeOrder, cancelOrder, cancelAndReplace, exchangeInfo } = require('../../utils/binance-spot');
 const { getIndicators } = require('../../analysis/multi/indicators-multi');
 const MarketAnalyzer = require('../../analysis/multi/MarketAnalyzer');
 const { saveData } = require('../../utils/fileManager');
@@ -12,38 +11,40 @@ const RateLimitedQueue = require('../../classes/RateLimitedQueue');
 const TablePrinter = require('./TablePrinter-multi');
 const TelegramBotHandler = require('./TelegramBotHandler-multi');
 const PairManager = require('../PairManager');
-const { plusPercent, minusPercent, calculateProfit, timePassed } = require('../../utils/helpers');
+const { plusPercent, minusPercent, calculateProfit, timePassed, wait } = require('../../utils/helpers');
 const config = require('../../config'); // Configuration file
 //server visualize
 const express = require('express');
 const http = require('http');
 const socketIo = require('socket.io');
 //
+const TimeManager = require('./timeManager');
+//
 class TradingBot {
     //ORDER_SIDES
     static BUY = 'BUY';
-    static STRONG_BUY = 'STRONG_BUY';
     static SELL = 'SELL';
-    static STRONG_SELL = 'STRONG_SELL';
     //ORDER_STATUS
     static FILLED = 'FILLED';
     static PARTIALLY_FILLED = 'PARTIALLY_FILLED';
     static CANCELED = 'CANCELED';
     static NEW = 'NEW';
     static EXPIRED = 'EXPIRED';
-
+    //
+    static STRONG_BUY = 'STRONG_BUY';
+    static STRONG_SELL = 'STRONG_SELL';
+    //
     constructor() {
         this.config = config; // Use the imported config
         this.queue = new RateLimitedQueue(1100, 1800, 20);
         this.tablePrinter = new TablePrinter();
         this.botDataLogger = {};
         this.exchangeInfo = {};
-        // Initialize the PairManager with the path to the pairs file
-        this.pairManager = new PairManager(path.join(__dirname, '..', '../pairs-multi.json'));
-        // Initialize the Telegram bot handler with a callback to handle commands
-        this.telegramBotHandler = new TelegramBotHandler(this.config, this.executeCommand.bind(this));
-        this.startTimeCheck(); // Start the server time checking interval
-        this.setupVisualizationServer();
+        this.pairManager = new PairManager(path.join(__dirname, '..', '../pairs-multi.json'));// Initialize the PairManager with the path to the pairs file
+        this.telegramBotHandler = new TelegramBotHandler(this.config, this.executeCommand.bind(this));// Initialize the Telegram bot handler with a callback to handle commands
+        this.setupVisualizationServer(); //init server for display
+        this.timeManager = new TimeManager(this.config, this.makeQueuedReq.bind(this)); //// Initialize TimeManager Pass the queued request method
+        this.timeManager.startTimeCheck();// Start time checks
     }
 
     // Initialization method
@@ -64,10 +65,8 @@ class TradingBot {
         this.app = express();
         this.server = http.createServer(this.app);
         this.io = socketIo(this.server);
-        
         // Serve static files
         this.app.use(express.static(path.join(__dirname, '../../public')));
-        
         // Socket.io connection handler
         this.io.on('connection', (socket) => {
           console.log('New client connected');
@@ -525,7 +524,7 @@ class TradingBot {
                     this.botDataLogger[pair.key] = result;
                     console.log('\n');
                 }
-                if (this.config.pairDelay) await this.wait(3000);
+                if (this.config.pairDelay) await wait(3000);
             } catch (error) {
                 console.error(`Error processing ${pair}:`, error);
             }
@@ -537,9 +536,6 @@ class TradingBot {
         return results;
     }
 
-    async wait(ms) {
-        return new Promise(resolve => setTimeout(resolve, ms));
-    }
 
     async botLoop() {
         while (this.config.isRunning) {
@@ -550,45 +546,10 @@ class TradingBot {
             if (this.config.printTable) this.tablePrinter.print(results);
             if (this.config.saveData) saveData(this.botDataLogger, 'final_data.json');
             
-            if (this.config.loopDelay) await this.wait(this.config.loopDelay);
+            if (this.config.loopDelay) await wait(this.config.loopDelay);
         }
     }
 
-    startTimeCheck() {
-        const timeCheckInterval = this.config.timeCheckInterval || 60000;
-        setInterval(() => this.checkTimeDifference(), timeCheckInterval);
-    }
-
-    async fetchServerTime() {
-        const response = await this.makeQueuedReq(serverTime);
-        return response;
-    }
-
-    async checkTimeDifference() {
-        const serverTimeData = await this.fetchServerTime();
-        if (!serverTimeData || serverTimeData.error) return;
-
-        const serverTime = serverTimeData.serverTime;
-        const localTime = Date.now();
-        const timeDifference = Math.abs(localTime - serverTime);
-
-        console.log(`Time difference: ${timeDifference} ms`);
-
-        if (timeDifference > this.config.maxTimeDifferenceMs) {
-            console.log('Time difference too large. Resynchronizing system time...');
-            if (this.config.shouldResynch) this.resynchronizeTime();
-        }
-    }
-
-    resynchronizeTime() {
-        try {
-            execSync('sudo ntpdate pool.ntp.org');
-            console.log('System time synchronized.');
-            process.exit(0);
-        } catch (error) {
-            console.error('Failed to resynchronize time:', error);
-        }
-    }
 }
 
 // Usage

@@ -427,72 +427,71 @@
     }
     
     function renderPredictiveMetrics(analysis) {
-      if (!analysis || !analysis.signals || analysis.signals.length === 0) {
-        return '<p>No predictive metrics available</p>';
-      }
-      
-      // Get metrics from the primary timeframe
-      const primarySignal = analysis.signals.find(s => s.timeframe === analysis.primaryTimeframe);
-      if (!primarySignal || !primarySignal.details.predictiveMetrics) {
-        return '<p>No predictive metrics available</p>';
-      }
-      
-      const metrics = primarySignal.details.predictiveMetrics;
-      const patterns = metrics.patterns || {};
+  if (!analysis || !analysis.signals || analysis.signals.length === 0) {
+    return '<p>No predictive metrics available</p>';
+  }
+
+  return `<div class="metrics-grid">
+    ${analysis.signals.map(signal => {
+      // Destructure the predictiveMetrics object for cleaner access
+      const { buyScore, sellScore, pricePosition, volumeChange, patterns } = signal.details.predictiveMetrics || {};
       
       return `
-        <div class="metrics-grid">
-          <div class="metric-item">
-            <div class="metric-label">Buy Score</div>
-            <div class="metric-value ${metrics.buyScore > 5 ? 'positive' : 'neutral'}">${metrics.buyScore || 0}</div>
-          </div>
-          <div class="metric-item">
-            <div class="metric-label">Sell Score</div>
-            <div class="metric-value ${metrics.sellScore > 5 ? 'negative' : 'neutral'}">${metrics.sellScore || 0}</div>
-          </div>
-          <div class="metric-item">
-            <div class="metric-label">Price Position</div>
-            <div class="metric-value">${metrics.pricePosition || 'N/A'}</div>
-          </div>
-          <div class="metric-item">
-            <div class="metric-label">Volume Change</div>
-            <div class="metric-value ${parseFloat(metrics.volumeChange) > 0 ? 'positive' : 'negative'}">${metrics.volumeChange || 'N/A'}</div>
-          </div>
-          <div class="metric-item">
-            <div class="metric-label">3 White Soldiers</div>
-            <div class="metric-value ${patterns.isThreeWhiteSoldiers ? 'positive' : 'neutral'}">${patterns.isThreeWhiteSoldiers ? 'Yes' : 'No'}</div>
-          </div>
-          <div class="metric-item">
-            <div class="metric-label">3 Black Crows</div>
-            <div class="metric-value ${patterns.isThreeBlackCrows ? 'negative' : 'neutral'}">${patterns.isThreeBlackCrows ? 'Yes' : 'No'}</div>
-          </div>
-          <div class="metric-item">
-            <div class="metric-label">Bullish Engulfing</div>
-            <div class="metric-value ${patterns.bullishEngulfing ? 'positive' : 'neutral'}">${patterns.bullishEngulfing ? 'Yes' : 'No'}</div>
-          </div>
-          <div class="metric-item">
-            <div class="metric-label">Bearish Engulfing</div>
-            <div class="metric-value ${patterns.bearishEngulfing ? 'negative' : 'neutral'}">${patterns.bearishEngulfing ? 'Yes' : 'No'}</div>
-          </div>
-          <div class="metric-item">
-            <div class="metric-label">Gap Up</div>
-            <div class="metric-value ${patterns.gapUp ? 'positive' : 'neutral'}">${patterns.gapUp ? 'Yes' : 'No'}</div>
-          </div>
-          <div class="metric-item">
-            <div class="metric-label">Gap Down</div>
-            <div class="metric-value ${patterns.gapDown ? 'negative' : 'neutral'}">${patterns.gapDown ? 'Yes' : 'No'}</div>
-          </div>
-          <div class="metric-item">
-            <div class="metric-label">Bottoming</div>
-            <div class="metric-value ${patterns.isBottoming ? 'positive' : 'neutral'}">${patterns.isBottoming ? 'Yes' : 'No'}</div>
-          </div>
-          <div class="metric-item">
-            <div class="metric-label">Pre-Breakout</div>
-            <div class="metric-value ${patterns.isPreBreakout ? 'positive' : 'neutral'}">${patterns.isPreBreakout ? 'Yes' : 'No'}</div>
-          </div>
+      <div>
+        <h3>${signal.timeframe}</h3>
+        <div class="metric-item">
+          <div class="metric-label">Buy Score</div>
+          <div class="metric-value ${buyScore > 5 ? 'positive' : 'neutral'}">${buyScore || 0}</div>
         </div>
+        <div class="metric-item">
+          <div class="metric-label">Sell Score</div>
+          <div class="metric-value ${sellScore > 5 ? 'negative' : 'neutral'}">${sellScore || 0}</div>
+        </div>
+        <div class="metric-item">
+          <div class="metric-label">Price Position</div>
+          <div class="metric-value">${pricePosition || 'N/A'}</div>
+        </div>
+        <div class="metric-item">
+          <div class="metric-label">Volume Change</div>
+          <div class="metric-value ${parseFloat(volumeChange) > 0 ? 'positive' : 'negative'}">${volumeChange || 'N/A'}</div>
+        </div>
+        <div class="metric-item">
+          <div class="metric-label">3 White Soldiers</div>
+          <div class="metric-value ${patterns?.isThreeWhiteSoldiers ? 'positive' : 'neutral'}">${patterns?.isThreeWhiteSoldiers ? 'Yes' : 'No'}</div>
+        </div>
+        <div class="metric-item">
+          <div class="metric-label">3 Black Crows</div>
+          <div class="metric-value ${patterns?.isThreeBlackCrows ? 'negative' : 'neutral'}">${patterns?.isThreeBlackCrows ? 'Yes' : 'No'}</div>
+        </div>
+        <div class="metric-item">
+          <div class="metric-label">Bullish Engulfing</div>
+          <div class="metric-value ${patterns?.bullishEngulfing ? 'positive' : 'neutral'}">${patterns?.bullishEngulfing ? 'Yes' : 'No'}</div>
+        </div>
+        <div class="metric-item">
+          <div class="metric-label">Bearish Engulfing</div>
+          <div class="metric-value ${patterns?.bearishEngulfing ? 'negative' : 'neutral'}">${patterns?.bearishEngulfing ? 'Yes' : 'No'}</div>
+        </div>
+        <div class="metric-item">
+          <div class="metric-label">Gap Up</div>
+          <div class="metric-value ${patterns?.gapUp ? 'positive' : 'neutral'}">${patterns?.gapUp ? 'Yes' : 'No'}</div>
+        </div>
+        <div class="metric-item">
+          <div class="metric-label">Gap Down</div>
+          <div class="metric-value ${patterns?.gapDown ? 'negative' : 'neutral'}">${patterns?.gapDown ? 'Yes' : 'No'}</div>
+        </div>
+        <div class="metric-item">
+          <div class="metric-label">Bottoming</div>
+          <div class="metric-value ${patterns?.isBottoming ? 'positive' : 'neutral'}">${patterns?.isBottoming ? 'Yes' : 'No'}</div>
+        </div>
+        <div class="metric-item">
+          <div class="metric-label">Pre-Breakout</div>
+          <div class="metric-value ${patterns?.isPreBreakout ? 'positive' : 'neutral'}">${patterns?.isPreBreakout ? 'Yes' : 'No'}</div>
+        </div>
+      </div>
       `;
-    }
+    }).join('')}
+  </div>`;
+}
     
     function updatePredictiveMetrics(card, analysis) {
       const collapsible = card.querySelector('.collapsible');
@@ -505,63 +504,81 @@
     }
     
     function renderAnalysisDetails(analysis) {
-      if (!analysis) return '<div class="no-analysis">No analysis data available</div>';
-      
-      return `
-        <div class="timeframe-analysis">
-          ${analysis.signals.map(signal => `
-            <div class="timeframe-signal ${signal.timeframe === analysis.primaryTimeframe ? 'active' : ''}">
-              <div class="timeframe-header">
-                <span>${signal.timeframe} timeframe</span>
-                <div class="signal-dot ${signal.signal.toLowerCase()}"></div>
-              </div>
-              <div class="signal-details">
-                <p><strong>${signal.details.trend.summary}</strong></p>
-                
-                <div class="trend-container">
-                  <div class="trend-item">
-                    <span class="trend-label">Price Trend:</span>
-                    <span class="trend-${getTrendClass(signal.details.trend.priceTrend)}">${signal.details.trend.priceTrend}</span>
-                  </div>
-                  <div class="trend-item">
-                    <span class="trend-label">Volume Trend:</span>
-                    <span class="trend-${getTrendClass(signal.details.trend.volumeTrend)}">${signal.details.trend.volumeTrend}</span>
-                  </div>
-                  <div class="trend-item">
-                    <span class="trend-label">Potential Move:</span>
-                    <span>${signal.details.trend.potentialMove}</span>
-                  </div>
-                  <div class="trend-item">
-                    <span class="trend-label">Confidence:</span>
-                    <span class="confidence-${signal.details.trend.confidence.toLowerCase()}">${signal.details.trend.confidence}</span>
-                  </div>
-                  <div class="trend-item">
-                    <span class="trend-label">Price Acceleration:</span>
-                    <span class="${signal.details.trend.priceAcceleration > 0 ? 'increasing' : 'decreasing'}">${signal.details.trend.priceAcceleration.toFixed(4)}</span>
-                  </div>
-                  <div class="trend-item">
-                    <span class="trend-label">Avg Price Change:</span>
-                    <span class="${signal.details.trend.avgPriceChange > 0 ? 'increasing' : 'decreasing'}">${signal.details.trend.avgPriceChange.toFixed(2)}%</span>
-                  </div>
-                  <div class="trend-item">
-                    <span class="trend-label">Avg Volume Change:</span>
-                    <span class="${signal.details.trend.avgVolumeChange > 0 ? 'increasing' : 'decreasing'}">${signal.details.trend.avgVolumeChange.toFixed(2)}%</span>
-                  </div>
-                  <div class="trend-item">
-                    <span class="trend-label">Volume Pattern:</span>
-                    <span>${signal.details.trend.volumePattern}</span>
-                  </div>
-                  <div class="trend-item">
-                    <span class="trend-label">Overall Price Change:</span>
-                    <span class="${signal.details.trend.overallPriceChange > 0 ? 'increasing' : 'decreasing'}">${signal.details.trend.overallPriceChange.toFixed(2)}%</span>
-                  </div>
+  if (!analysis) return '<div class="no-analysis">No analysis data available</div>';
+  
+  return `
+    <div class="timeframe-analysis">
+      ${analysis.signals.map(signal => {
+        // Destructure the signal object
+        const { timeframe, details } = signal;
+        const { trend } = details;
+        const {
+          summary,
+          priceTrend,
+          volumeTrend,
+          potentialMove,
+          confidence,
+          priceAcceleration,
+          avgPriceChange,
+          avgVolumeChange,
+          volumePattern,
+          overallPriceChange
+        } = trend || {};
+
+        return `
+          <div class="timeframe-signal ${timeframe === analysis.primaryTimeframe ? 'active' : ''}">
+            <div class="timeframe-header">
+              <span>${timeframe} timeframe</span>
+              <div class="signal-dot ${signal.signal.toLowerCase()}"></div>
+            </div>
+            <div class="signal-details">
+              <p><strong>${summary}</strong></p>
+              
+              <div class="trend-container">
+                <div class="trend-item">
+                  <span class="trend-label">Price Trend:</span>
+                  <span class="trend-${getTrendClass(priceTrend)}">${priceTrend}</span>
+                </div>
+                <div class="trend-item">
+                  <span class="trend-label">Volume Trend:</span>
+                  <span class="trend-${getTrendClass(volumeTrend)}">${volumeTrend}</span>
+                </div>
+                <div class="trend-item">
+                  <span class="trend-label">Potential Move:</span>
+                  <span>${potentialMove}</span>
+                </div>
+                <div class="trend-item">
+                  <span class="trend-label">Confidence:</span>
+                  <span class="confidence-${confidence?.toLowerCase()}">${confidence}</span>
+                </div>
+                <div class="trend-item">
+                  <span class="trend-label">Price Acceleration:</span>
+                  <span class="${priceAcceleration > 0 ? 'increasing' : 'decreasing'}">${priceAcceleration?.toFixed(4)}</span>
+                </div>
+                <div class="trend-item">
+                  <span class="trend-label">Avg Price Change:</span>
+                  <span class="${avgPriceChange > 0 ? 'increasing' : 'decreasing'}">${avgPriceChange?.toFixed(2)}%</span>
+                </div>
+                <div class="trend-item">
+                  <span class="trend-label">Avg Volume Change:</span>
+                  <span class="${avgVolumeChange > 0 ? 'increasing' : 'decreasing'}">${avgVolumeChange?.toFixed(2)}%</span>
+                </div>
+                <div class="trend-item">
+                  <span class="trend-label">Volume Pattern:</span>
+                  <span>${volumePattern}</span>
+                </div>
+                <div class="trend-item">
+                  <span class="trend-label">Overall Price Change:</span>
+                  <span class="${overallPriceChange > 0 ? 'increasing' : 'decreasing'}">${overallPriceChange?.toFixed(2)}%</span>
                 </div>
               </div>
             </div>
-          `).join('')}
-        </div>
-      `;
-    }
+          </div>
+        `;
+      }).join('')}
+    </div>
+  `;
+}
     
     function updateAnalysisDetails(card, analysis) {
       const container = card.querySelector('.analysis-container');

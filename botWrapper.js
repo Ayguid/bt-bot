@@ -2,7 +2,7 @@ const { spawn } = require('child_process');
 
 let currentBot = null;
 let isRestarting = false;
-const RESTART_DELAY = 2000;
+const RESTART_DELAY = 3000;
 
 function startBot() {
     if (isRestarting) return;
@@ -32,7 +32,8 @@ function startBot() {
             'ESOCKETTIMEDOUT', 
             'EFATAL',
             'ECONNRESET',
-            'ETELEGRAM: 409 Conflict'
+            'ETELEGRAM: 409 Conflict',
+            'EAI_AGAIN'
         ];
 
         if (criticalErrors.some(err => output.includes(err))) {

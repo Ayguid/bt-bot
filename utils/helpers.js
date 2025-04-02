@@ -32,4 +32,8 @@ const getLastElement = (array) => {
     return array.slice(-1)[0];//array[array.length -1]; but non destructive
 }
 
-module.exports = { percent , roundDown, minusPercent, plusPercent, timePassed, calculateProfit, getLastElement };
+const wait = async (ms) => {
+    return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+module.exports = { percent , roundDown, minusPercent, plusPercent, timePassed, calculateProfit, getLastElement, wait };

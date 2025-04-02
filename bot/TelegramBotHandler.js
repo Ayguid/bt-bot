@@ -1,6 +1,6 @@
 const TelegramBot = require('node-telegram-bot-api');
 //fix for some networks blocking the req
-const axios = require('axios');
+//const axios = require('axios');
 //
 class TelegramBotHandler {
     constructor(config, handleCommandCallback) {
