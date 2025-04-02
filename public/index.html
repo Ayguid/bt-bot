@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Trading Bot Dashboard</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="/socket.io/socket.io.js"></script>
+  <style>
+    body { 
+      font-family: Arial, sans-serif;
+      padding: 20px;
+      background-color: #f5f5f5;
+      margin: 0;
+    }
+    .dashboard { 
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+      gap: 15px;
+      padding-bottom: 20px;
+    }
+    .pair-card {
+      background: white;
+      border-radius: 8px;
+      padding: 15px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+    .price {
+      font-size: 1.4rem;
+      font-weight: bold;
+      margin: 5px 0;
+    }
+    .signal-buy { 
+      color: green;
+      font-weight: bold;
+    }
+    .signal-sell { 
+      color: red;
+      font-weight: bold;
+    }
+    .orders {
+      margin-top: 15px;
+      border-top: 1px solid #eee;
+      padding-top: 10px;
+      max-height: 200px;
+      overflow-y: auto;
+    }
+    .orders-header {
+      display: flex;
+      justify-content: space-between;
+      font-weight: bold;
+      padding: 5px 0;
+      border-bottom: 1px solid #ddd;
+      margin-bottom: 5px;
+    }
+    .order {
+      display: flex;
+      justify-content: space-between;
+      padding: 5px 0;
+      border-bottom: 1px dashed #eee;
+      font-size: 0.9rem;
+    }
+    .mini-chart {
+      height: 60px;
+      margin: 10px 0;
+    }
+    .order-buy {
+      color: green;
+    }
+    .order-sell {
+      color: red;
+    }
+    .status {
+      font-size: 0.8rem;
+      padding: 2px 5px;
+      border-radius: 3px;
+    }
+    .status-NEW {
+      background: #e3f2fd;
+    }
+    .status-FILLED {
+      background: #e8f5e9;
+    }
+    .status-PARTIALLY_FILLED {
+      background: #fff8e1;
+    }
+    .status-CANCELED {
+      background: #ffebee;
+    }
+    .order-time {
+      font-size: 0.8rem;
+      color: #666;
+    }
+  </style>
+</head>
+<body>
+  <h1>Trading Bot Dashboard</h1>
+  <div class="dashboard" id="dashboard"></div>
+
+  <script>
+    const socket = io();
+    const dashboard = document.getElementById('dashboard');
+    const charts = {}; // Store chart instances
+    let currentData = {};
+
+    socket.on('initial-data', (data) => {
+      currentData = data;
+      renderDashboard();
+    });
+    
+    socket.on('data-update', (data) => {
+      currentData = data;
+      updateDashboard();
+    });
+    
+    function renderDashboard() {
+      dashboard.innerHTML = '';
+      
+      for (const [pair, info] of Object.entries(currentData)) {
+        createPairCard(pair, info);
+      }
+    }
+    
+    function updateDashboard() {
+      for (const [pair, info] of Object.entries(currentData)) {
+        const card = document.getElementById(`card-${pair}`);
+        if (!card) {
+          createPairCard(pair, info);
+          continue;
+        }
+        
+        // Update price and signal
+        const priceEl = card.querySelector('.price');
+        const signalEl = card.querySelector('.signal');
+        const ordersContainer = card.querySelector('.orders');
+        
+        if (priceEl) priceEl.textContent = info.currentPrice || 'N/A';
+        if (signalEl) {
+          signalEl.className = info.analysis?.consensusSignal?.includes('BUY') 
+            ? 'signal signal-buy' : 'signal signal-sell';
+          signalEl.textContent = info.analysis?.consensusSignal || 'N/A';
+        }
+        
+        // Update orders if changed
+        if (ordersContainer) {
+          const currentOrders = JSON.stringify(info.orders?.slice().reverse().slice(0, 10) || []);
+          const previousOrders = ordersContainer.dataset.orders || '[]';
+          
+          if (currentOrders !== previousOrders) {
+            ordersContainer.innerHTML = `
+              <h3>Recent Orders (${info.orders?.length || 0})</h3>
+              <div class="orders-header">
+                <span>Type</span>
+                <span>Price</span>
+                <span>Qty</span>
+                <span>Status</span>
+                <span>Time</span>
+              </div>
+              ${renderOrders(info.orders)}
+            `;
+            ordersContainer.dataset.orders = currentOrders;
+          }
+        }
+        
+        // Update chart data if exists
+        if (charts[pair] && info.analysis?.candles?.['1h']) {
+          updateChart(pair, info.analysis.candles['1h']);
+        }
+      }
+    }
+    
+    function createPairCard(pair, info) {
+      const card = document.createElement('div');
+      card.className = 'pair-card';
+      card.id = `card-${pair}`;
+      
+      const signal = info.analysis?.consensusSignal || 'N/A';
+      const signalClass = signal.includes('BUY') ? 'signal-buy' : 'signal-sell';
+      const orders = info.orders?.slice().reverse().slice(0, 10) || [];
+      
+      card.innerHTML = `
+        <h2>${pair.replace('_', '/')}</h2>
+        <div class="price">${info.currentPrice || 'N/A'}</div>
+        <div class="signal ${signalClass}">${signal}</div>
+        <div class="mini-chart">
+          <canvas id="chart-${pair}"></canvas>
+        </div>
+        <div class="orders" data-orders="${JSON.stringify(orders)}">
+          <h3>Recent Orders (${info.orders?.length || 0})</h3>
+          <div class="orders-header">
+            <span>Type</span>
+            <span>Price</span>
+            <span>Qty</span>
+            <span>Status</span>
+            <span>Time</span>
+          </div>
+          ${renderOrders(info.orders)}
+        </div>
+      `;
+      
+      dashboard.appendChild(card);
+      
+      // Initialize mini chart if data available
+      if (info.analysis?.candles?.['1h']) {
+        initChart(pair, info.analysis.candles['1h']);
+      }
+    }
+    
+    function renderOrders(orders) {
+      if (!orders || orders.length === 0) return '<p>No recent orders</p>';
+      
+      // Reverse to show newest first, then take first 10
+      const recentOrders = orders.slice().reverse().slice(0, 10);
+      
+      return recentOrders.map(order => {
+        const time = order.time ? new Date(order.time).toLocaleTimeString() : '';
+        return `
+        <div class="order">
+          <span class="order-${order.side.toLowerCase()}">${order.side}</span>
+          <span>${order.price}</span>
+          <span>${order.origQty}</span>
+          <span class="status status-${order.status}">${order.status.split('_')[0]}</span>
+          <span class="order-time">${time}</span>
+        </div>
+        `;
+      }).join('');
+    }
+    
+    function initChart(pair, candles) {
+      const ctx = document.getElementById(`chart-${pair}`);
+      const prices = candles.slice(-24).map(c => c[4]); // Last 24 hours
+      
+      charts[pair] = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: prices.map((_, i) => ''),
+          datasets: [{
+            data: prices,
+            borderColor: '#3a86ff',
+            borderWidth: 1,
+            fill: false,
+            pointRadius: 0
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { display: false } },
+          scales: { x: { display: false }, y: { display: false } },
+          elements: { line: { tension: 0 } }
+        }
+      });
+    }
+    
+    function updateChart(pair, candles) {
+      const chart = charts[pair];
+      if (!chart) return;
+      
+      const prices = candles.slice(-24).map(c => c[4]);
+      chart.data.datasets[0].data = prices;
+      chart.update();
+    }
+  </script>
+</body>
+</html>
