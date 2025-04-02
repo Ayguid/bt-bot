@@ -123,7 +123,7 @@
     "key": "FUN_USDT",
     "orderQty": 20,
     "profitMgn": 4.5,
-    "belowPrice": 0.1,
+    "belowPrice": 0.4,
     "okLoss": -4.0,
     "maxStopLoss": -6.0,
     "okDiff": 1.8,
