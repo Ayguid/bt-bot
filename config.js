@@ -1,7 +1,7 @@
 const config = {
     debug: true,
     isRunning: false,
-    telegramBotEnabled: true,
+    telegramBotEnabled: false,
     printTable: true,
     saveData: false,
     //

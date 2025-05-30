@@ -1,0 +1,668 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Trading Bot Dashboard</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="/socket.io/socket.io.js"></script>
+  <style>
+    body { 
+      font-family: Arial, sans-serif;
+      padding: 20px;
+      background-color: #f5f5f5;
+      margin: 0;
+    }
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+    .dashboard { 
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+      gap: 15px;
+      padding-bottom: 20px;
+    }
+    .pair-card {
+      background: white;
+      border-radius: 8px;
+      padding: 15px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+    .price {
+      font-size: 1.4rem;
+      font-weight: bold;
+      margin: 5px 0;
+    }
+    
+    /* Signal indicators */
+    .signal-badge {
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-weight: bold;
+      text-transform: uppercase;
+      font-size: 0.8rem;
+      display: inline-block;
+      margin-left: 10px;
+    }
+    .signal-buy, .signal-dot.buy { background: #4CAF50; color: white; }
+    .signal-sell, .signal-dot.sell { background: #F44336; color: white; }
+    .signal-hold, .signal-dot.hold { background: #FFC107; color: black; }
+    .signal-early_buy { background: #2E7D32; color: white; }
+    .signal-early_strong_buy { background: #1B5E20; color: white; }
+    
+    /* Confidence levels */
+    .confidence-high { color: #4CAF50; }
+    .confidence-medium { color: #FFC107; }
+    .confidence-low { color: #F44336; }
+    
+    /* Timeframe analysis */
+    .timeframe-analysis {
+      margin: 10px 0;
+    }
+    .timeframe-signal {
+      padding: 8px;
+      margin: 4px 0;
+      border-left: 3px solid transparent;
+      background: #fafafa;
+      border-radius: 4px;
+    }
+    .timeframe-signal.active {
+      border-left-color: #2196F3;
+      background: #f5f5f5;
+    }
+    .timeframe-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .signal-dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+    }
+    
+    /* Key metrics */
+    .key-metrics {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin: 10px 0;
+    }
+    .metric {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.9rem;
+    }
+    .metric-value {
+      font-weight: bold;
+    }
+    
+    /* Trend indicators */
+    .trend-indicator {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 0.9rem;
+    }
+    .trend-arrow {
+      font-weight: bold;
+    }
+    .trend-arrow.up { color: #4CAF50; }
+    .trend-arrow.down { color: #F44336; }
+    
+    /* Volume indicators */
+    .trend-container {
+      margin-top: 10px;
+      background: #f9f9f9;
+      border-radius: 6px;
+      padding: 10px;
+    }
+    .trend-item {
+      display: flex;
+      justify-content: space-between;
+      margin: 5px 0;
+      font-size: 0.9rem;
+    }
+    .trend-label {
+      font-weight: bold;
+    }
+    .trend-sideways { color: #FF9800; }
+    .trend-up { color: #4CAF50; }
+    .trend-down { color: #F44336; }
+    .stable { color: #2196F3; }
+    .increasing { color: #4CAF50; }
+    .decreasing { color: #F44336; }
+    
+    /* Mini chart */
+    .mini-chart {
+      height: 60px;
+      margin: 10px 0;
+    }
+    
+    /* Orders table */
+    .orders {
+      margin-top: 15px;
+      border-top: 1px solid #eee;
+      padding-top: 10px;
+      max-height: 200px;
+      overflow-y: auto;
+    }
+    .orders-header {
+      display: flex;
+      justify-content: space-between;
+      font-weight: bold;
+      padding: 5px 0;
+      border-bottom: 1px solid #ddd;
+      margin-bottom: 5px;
+    }
+    .order {
+      display: flex;
+      justify-content: space-between;
+      padding: 5px 0;
+      border-bottom: 1px dashed #eee;
+      font-size: 0.9rem;
+    }
+    .order-buy {
+      color: green;
+    }
+    .order-sell {
+      color: red;
+    }
+    .status {
+      font-size: 0.8rem;
+      padding: 2px 5px;
+      border-radius: 3px;
+    }
+    .status-NEW {
+      background: #e3f2fd;
+    }
+    .status-FILLED {
+      background: #e8f5e9;
+    }
+    .status-PARTIALLY_FILLED {
+      background: #fff8e1;
+    }
+    .status-CANCELED {
+      background: #ffebee;
+    }
+    .order-time {
+      font-size: 0.8rem;
+      color: #666;
+    }
+
+    /* Collapsible section styles */
+    .collapsible {
+      margin: 10px 0;
+      border-radius: 6px;
+      overflow: hidden;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+    
+    .collapsible-header {
+      padding: 10px 15px;
+      background: #f0f0f0;
+      cursor: pointer;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-weight: bold;
+      transition: background 0.2s;
+    }
+    
+    .collapsible-header:hover {
+      background: #e0e0e0;
+    }
+    
+    .collapsible-header::after {
+      content: '+';
+      font-size: 1.2rem;
+      transition: transform 0.3s;
+    }
+    
+    .collapsible-header.active::after {
+      transform: rotate(45deg);
+    }
+    
+    .collapsible-content {
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height 0.3s ease-out;
+      background: white;
+    }
+    
+    .collapsible-content-inner {
+      padding: 15px;
+    }
+    
+    /* Metrics grid */
+    .metrics-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+      gap: 10px;
+    }
+    
+    .metric-item {
+      background: #f9f9f9;
+      padding: 8px;
+      border-radius: 4px;
+      font-size: 0.85rem;
+    }
+    
+    .metric-label {
+      font-weight: bold;
+      margin-bottom: 3px;
+      color: #555;
+    }
+    
+    .metric-value {
+      font-size: 0.95rem;
+    }
+    
+    .positive {
+      color: #4CAF50;
+    }
+    
+    .negative {
+      color: #F44336;
+    }
+    
+    .neutral {
+      color: #2196F3;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Trading Bot Dashboard</h1>
+    <div class="dashboard" id="dashboard"></div>
+  </div>
+
+  <script>
+    const socket = io();
+    const dashboard = document.getElementById('dashboard');
+    const charts = {}; // Store chart instances
+    let currentData = {};
+
+    socket.on('initial-data', (data) => {
+      currentData = data;
+      renderDashboard();
+    });
+    
+    socket.on('data-update', (data) => {
+      currentData = data;
+      updateDashboard();
+    });
+    
+    function renderDashboard() {
+      dashboard.innerHTML = '';
+      
+      for (const [pair, info] of Object.entries(currentData)) {
+        createPairCard(pair, info);
+      }
+    }
+    
+    function updateDashboard() {
+      for (const [pair, info] of Object.entries(currentData)) {
+        const card = document.getElementById(`card-${pair}`);
+        if (!card) {
+          createPairCard(pair, info);
+          continue;
+        }
+        
+        // Update price and signal
+        const priceEl = card.querySelector('.price');
+        const signalEl = card.querySelector('.signal-badge');
+        const ordersContainer = card.querySelector('.orders');
+        
+        if (priceEl) priceEl.textContent = info.currentPrice || 'N/A';
+        if (signalEl) {
+          signalEl.className = `signal-badge ${getSignalClass(info.analysis?.consensusSignal)}`;
+          signalEl.textContent = info.analysis?.consensusSignal || 'N/A';
+        }
+        
+        // Update analysis details if changed
+        updateAnalysisDetails(card, info.analysis);
+        
+        // Update predictive metrics if changed
+        updatePredictiveMetrics(card, info.analysis);
+        
+        // Update orders if changed
+        if (ordersContainer) {
+          const currentOrders = JSON.stringify(info.orders?.slice().reverse().slice(0, 10) || []);
+          const previousOrders = ordersContainer.dataset.orders || '[]';
+          
+          if (currentOrders !== previousOrders) {
+            ordersContainer.innerHTML = `
+              <h3>Recent Orders (${info.orders?.length || 0})</h3>
+              <div class="orders-header">
+                <span>Type</span>
+                <span>Price</span>
+                <span>Qty</span>
+                <span>Status</span>
+                <span>Time</span>
+              </div>
+              ${renderOrders(info.orders)}
+            `;
+            ordersContainer.dataset.orders = currentOrders;
+          }
+        }
+        
+        // Update chart data if exists
+        if (charts[pair] && info.analysis?.candles?.['1h']) {
+          updateChart(pair, info.analysis.candles['1h']);
+        }
+      }
+    }
+    
+    function createPairCard(pair, info) {
+      const card = document.createElement('div');
+      card.className = 'pair-card';
+      card.id = `card-${pair}`;
+      
+      const signal = info.analysis?.consensusSignal || 'N/A';
+      const orders = info.orders?.slice().reverse().slice(0, 10) || [];
+      
+      card.innerHTML = `
+        <div class="pair-header">
+          <h2>${pair.replace('_', '/')}</h2>
+          <div class="signal-badge ${getSignalClass(signal)}">${signal}</div>
+        </div>
+        <div class="price">${info.currentPrice || 'N/A'}</div>
+        
+        <div class="analysis-container">
+          ${renderAnalysisDetails(info.analysis)}
+        </div>
+        
+        <div class="collapsible">
+          <div class="collapsible-header">
+            Predictive Metrics
+          </div>
+          <div class="collapsible-content">
+            <div class="collapsible-content-inner">
+              ${renderPredictiveMetrics(info.analysis)}
+            </div>
+          </div>
+        </div>
+        
+        <div class="mini-chart">
+          <canvas id="chart-${pair}"></canvas>
+        </div>
+        <div class="orders" data-orders="${JSON.stringify(orders)}">
+          <h3>Recent Orders (${info.orders?.length || 0})</h3>
+          <div class="orders-header">
+            <span>Type</span>
+            <span>Price</span>
+            <span>Qty</span>
+            <span>Status</span>
+            <span>Time</span>
+          </div>
+          ${renderOrders(info.orders)}
+        </div>
+      `;
+      
+      dashboard.appendChild(card);
+      
+      // Initialize collapsible functionality
+      initCollapsible(card);
+      
+      // Initialize mini chart if data available
+      if (info.analysis?.candles?.['1h']) {
+        initChart(pair, info.analysis.candles['1h']);
+      }
+    }
+    
+    function initCollapsible(card) {
+      const headers = card.querySelectorAll('.collapsible-header');
+      
+      headers.forEach(header => {
+        header.addEventListener('click', function() {
+          this.classList.toggle('active');
+          const content = this.nextElementSibling;
+          if (content.style.maxHeight) {
+            content.style.maxHeight = null;
+          } else {
+            content.style.maxHeight = content.scrollHeight + 'px';
+          }
+        });
+      });
+    }
+    
+    function renderPredictiveMetrics(analysis) {
+  if (!analysis || !analysis.signals || analysis.signals.length === 0) {
+    return '<p>No predictive metrics available</p>';
+  }
+
+  return `<div class="metrics-grid">
+    ${analysis.signals.map(signal => {
+      // Destructure the predictiveMetrics object for cleaner access
+      const { buyScore, sellScore, pricePosition, volumeChange, patterns } = signal.details.predictiveMetrics || {};
+      
+      return `
+      <div>
+        <h3>${signal.timeframe}</h3>
+        <div class="metric-item">
+          <div class="metric-label">Buy Score</div>
+          <div class="metric-value ${buyScore > 5 ? 'positive' : 'neutral'}">${buyScore || 0}</div>
+        </div>
+        <div class="metric-item">
+          <div class="metric-label">Sell Score</div>
+          <div class="metric-value ${sellScore > 5 ? 'negative' : 'neutral'}">${sellScore || 0}</div>
+        </div>
+        <div class="metric-item">
+          <div class="metric-label">Price Position</div>
+          <div class="metric-value">${pricePosition || 'N/A'}</div>
+        </div>
+        <div class="metric-item">
+          <div class="metric-label">Volume Change</div>
+          <div class="metric-value ${parseFloat(volumeChange) > 0 ? 'positive' : 'negative'}">${volumeChange || 'N/A'}</div>
+        </div>
+        <div class="metric-item">
+          <div class="metric-label">3 White Soldiers</div>
+          <div class="metric-value ${patterns?.isThreeWhiteSoldiers ? 'positive' : 'neutral'}">${patterns?.isThreeWhiteSoldiers ? 'Yes' : 'No'}</div>
+        </div>
+        <div class="metric-item">
+          <div class="metric-label">3 Black Crows</div>
+          <div class="metric-value ${patterns?.isThreeBlackCrows ? 'negative' : 'neutral'}">${patterns?.isThreeBlackCrows ? 'Yes' : 'No'}</div>
+        </div>
+        <div class="metric-item">
+          <div class="metric-label">Bullish Engulfing</div>
+          <div class="metric-value ${patterns?.bullishEngulfing ? 'positive' : 'neutral'}">${patterns?.bullishEngulfing ? 'Yes' : 'No'}</div>
+        </div>
+        <div class="metric-item">
+          <div class="metric-label">Bearish Engulfing</div>
+          <div class="metric-value ${patterns?.bearishEngulfing ? 'negative' : 'neutral'}">${patterns?.bearishEngulfing ? 'Yes' : 'No'}</div>
+        </div>
+        <div class="metric-item">
+          <div class="metric-label">Gap Up</div>
+          <div class="metric-value ${patterns?.gapUp ? 'positive' : 'neutral'}">${patterns?.gapUp ? 'Yes' : 'No'}</div>
+        </div>
+        <div class="metric-item">
+          <div class="metric-label">Gap Down</div>
+          <div class="metric-value ${patterns?.gapDown ? 'negative' : 'neutral'}">${patterns?.gapDown ? 'Yes' : 'No'}</div>
+        </div>
+        <div class="metric-item">
+          <div class="metric-label">Bottoming</div>
+          <div class="metric-value ${patterns?.isBottoming ? 'positive' : 'neutral'}">${patterns?.isBottoming ? 'Yes' : 'No'}</div>
+        </div>
+        <div class="metric-item">
+          <div class="metric-label">Pre-Breakout</div>
+          <div class="metric-value ${patterns?.isPreBreakout ? 'positive' : 'neutral'}">${patterns?.isPreBreakout ? 'Yes' : 'No'}</div>
+        </div>
+      </div>
+      `;
+    }).join('')}
+  </div>`;
+}
+    
+    function updatePredictiveMetrics(card, analysis) {
+      const collapsible = card.querySelector('.collapsible');
+      if (collapsible) {
+        const content = collapsible.querySelector('.collapsible-content-inner');
+        if (content) {
+          content.innerHTML = renderPredictiveMetrics(analysis);
+        }
+      }
+    }
+    
+    function renderAnalysisDetails(analysis) {
+  if (!analysis) return '<div class="no-analysis">No analysis data available</div>';
+  
+  return `
+    <div class="timeframe-analysis">
+      ${analysis.signals.map(signal => {
+        // Destructure the signal object
+        const { timeframe, details } = signal;
+        const { trend } = details;
+        const {
+          summary,
+          priceTrend,
+          volumeTrend,
+          potentialMove,
+          confidence,
+          priceAcceleration,
+          avgPriceChange,
+          avgVolumeChange,
+          volumePattern,
+          overallPriceChange
+        } = trend || {};
+
+        return `
+          <div class="timeframe-signal ${timeframe === analysis.primaryTimeframe ? 'active' : ''}">
+            <div class="timeframe-header">
+              <span>${timeframe} timeframe</span>
+              <div class="signal-dot ${signal.signal.toLowerCase()}"></div>
+            </div>
+            <div class="signal-details">
+              <p><strong>${summary}</strong></p>
+              
+              <div class="trend-container">
+                <div class="trend-item">
+                  <span class="trend-label">Price Trend:</span>
+                  <span class="trend-${getTrendClass(priceTrend)}">${priceTrend}</span>
+                </div>
+                <div class="trend-item">
+                  <span class="trend-label">Volume Trend:</span>
+                  <span class="trend-${getTrendClass(volumeTrend)}">${volumeTrend}</span>
+                </div>
+                <div class="trend-item">
+                  <span class="trend-label">Potential Move:</span>
+                  <span>${potentialMove}</span>
+                </div>
+                <div class="trend-item">
+                  <span class="trend-label">Confidence:</span>
+                  <span class="confidence-${confidence?.toLowerCase()}">${confidence}</span>
+                </div>
+                <div class="trend-item">
+                  <span class="trend-label">Price Acceleration:</span>
+                  <span class="${priceAcceleration > 0 ? 'increasing' : 'decreasing'}">${priceAcceleration?.toFixed(4)}</span>
+                </div>
+                <div class="trend-item">
+                  <span class="trend-label">Avg Price Change:</span>
+                  <span class="${avgPriceChange > 0 ? 'increasing' : 'decreasing'}">${avgPriceChange?.toFixed(2)}%</span>
+                </div>
+                <div class="trend-item">
+                  <span class="trend-label">Avg Volume Change:</span>
+                  <span class="${avgVolumeChange > 0 ? 'increasing' : 'decreasing'}">${avgVolumeChange?.toFixed(2)}%</span>
+                </div>
+                <div class="trend-item">
+                  <span class="trend-label">Volume Pattern:</span>
+                  <span>${volumePattern}</span>
+                </div>
+                <div class="trend-item">
+                  <span class="trend-label">Overall Price Change:</span>
+                  <span class="${overallPriceChange > 0 ? 'increasing' : 'decreasing'}">${overallPriceChange?.toFixed(2)}%</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('')}
+    </div>
+  `;
+}
+    
+    function updateAnalysisDetails(card, analysis) {
+      const container = card.querySelector('.analysis-container');
+      if (container && analysis) {
+        container.innerHTML = renderAnalysisDetails(analysis);
+      }
+    }
+    
+    function getTrendClass(trend) {
+      if (!trend) return '';
+      trend = trend.toLowerCase();
+      if (trend.includes('up') || trend.includes('increasing')) return 'up';
+      if (trend.includes('down') || trend.includes('decreasing')) return 'down';
+      if (trend.includes('sideways')) return 'sideways';
+      if (trend.includes('stable')) return 'stable';
+      return '';
+    }
+    
+    function getSignalClass(signal) {
+      if (!signal) return '';
+      signal = signal.toLowerCase();
+      if (signal.includes('early_strong_buy')) return 'signal-early_strong_buy';
+      if (signal.includes('early_buy')) return 'signal-early_buy';
+      if (signal.includes('strong_buy')) return 'signal-buy';
+      if (signal.includes('buy')) return 'signal-buy';
+      if (signal.includes('strong_sell')) return 'signal-sell';
+      if (signal.includes('sell')) return 'signal-sell';
+      return 'signal-hold';
+    }
+    
+    function renderOrders(orders) {
+      if (!orders || orders.length === 0) return '<p>No recent orders</p>';
+      
+      // Reverse to show newest first, then take first 10
+      const recentOrders = orders.slice().reverse().slice(0, 10);
+      
+      return recentOrders.map(order => {
+        const time = order.time ? new Date(order.time).toLocaleTimeString() : '';
+        return `
+        <div class="order">
+          <span class="order-${order.side.toLowerCase()}">${order.side}</span>
+          <span>${order.price}</span>
+          <span>${order.origQty}</span>
+          <span class="status status-${order.status}">${order.status.split('_')[0]}</span>
+          <span class="order-time">${time}</span>
+        </div>
+        `;
+      }).join('');
+    }
+    
+    function initChart(pair, candles) {
+      const ctx = document.getElementById(`chart-${pair}`);
+      const prices = candles.slice(-24).map(c => c[4]); // Last 24 hours
+      
+      charts[pair] = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: prices.map((_, i) => ''),
+          datasets: [{
+            data: prices,
+            borderColor: '#3a86ff',
+            borderWidth: 1,
+            fill: false,
+            pointRadius: 0
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { display: false } },
+          scales: { x: { display: false }, y: { display: false } },
+          elements: { line: { tension: 0 } }
+        }
+      });
+    }
+    
+    function updateChart(pair, candles) {
+      const chart = charts[pair];
+      if (!chart) return;
+      
+      const prices = candles.slice(-24).map(c => c[4]);
+      chart.data.datasets[0].data = prices;
+      chart.update();
+    }
+  </script>
+</body>
+</html>

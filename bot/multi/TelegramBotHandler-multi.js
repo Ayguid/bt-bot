@@ -1,6 +1,6 @@
 const TelegramBot = require('node-telegram-bot-api');
 //fix for some networks blocking the req
-//const axios = require('axios');
+const axios = require('axios');
 //
 class TelegramBotHandler {
     constructor(config, handleCommandCallback) {
@@ -39,8 +39,8 @@ class TelegramBotHandler {
             console.log(`Telegram bot is disabled, not sending alert for ${pair}.`);
             return; // Exit early if the Telegram bot is disabled
         }
-        const normalizedSignal = analysis.signal.toLowerCase();
-        if (!['buy', 'sell'].includes(normalizedSignal)) return;
+        const normalizedSignal = analysis.consensusSignal.toLowerCase();
+        //if (!['buy', 'sell'].includes(normalizedSignal)) return;
         const currentTime = Date.now();
         if (!this.groupChatLastAlertTimes[normalizedSignal]) {
             this.groupChatLastAlertTimes[normalizedSignal] = {};
@@ -49,7 +49,7 @@ class TelegramBotHandler {
         const timeSinceLastAlert = currentTime - lastAlertTime;
         if (timeSinceLastAlert >= this.config.alertCooldown) {
             try {
-                this.tBot.sendMessage(process.env.TELEGRAM_GROUPCHAT_ID, `${analysis.signal} signal for ${pair}`);
+                this.tBot.sendMessage(process.env.TELEGRAM_GROUPCHAT_ID, `${normalizedSignal} signal for ${pair}`);
                 this.groupChatLastAlertTimes[normalizedSignal][pair] = currentTime;
                 console.log(`Alert sent for ${pair} (${normalizedSignal})`);
             } catch (error) {
